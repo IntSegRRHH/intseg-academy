@@ -2,9 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>IntSeg Academy</title>
-<link rel="stylesheet" href="./styles.css"/>
+<link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
 
@@ -13,16 +13,51 @@
 <!-- ══════════════ LOGIN ══════════════ -->
 <section id="viewLogin">
   <div class="loginWrap">
-    <div class="loginLogo"><img src="logo-intseg-nobg.png" alt="IntSeg Academy" class="loginLogoImg"/></div>
-    <div class="loginCard">
-      <div class="loginCardTitle">Login</div>
+    <div class="loginLogo"><img src="assets/37b28b6cb1.png" alt="IntSeg Academy" class="loginLogoImg"/></div>
+
+    <!-- Acceso del guardia: número de empleado + foto (mismo flujo que IntsegWeb) -->
+    <div class="loginCard" id="loginGuardia">
+      <div class="loginCardTitle">Registrar número de empleado</div>
+      <div class="loginError hidden" id="empError"></div>
+      <input class="loginInput" id="empNum" type="text" inputmode="numeric" autocomplete="off" placeholder="Número de empleado" aria-label="Número de empleado"/>
+      <button class="loginBtn" id="btnEmp">Registrar</button>
+
+      <div class="empPaso hidden" id="empPaso">
+        <div class="empNombre" id="empNombre"></div>
+        <div class="empModulo">ACADEMY</div>
+        <div class="empFoto">
+          <video id="empVideo" autoplay playsinline muted class="hidden"></video>
+          <img id="empImg" alt="Foto de acceso" class="hidden"/>
+          <div class="empFoto__vacio" id="empVacio">
+            <svg viewBox="0 0 24 24"><path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9zm3 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10z"/></svg>
+            <span>Tómate una foto para entrar</span>
+          </div>
+        </div>
+        <div class="empAviso hidden" id="empAviso"></div>
+        <button class="loginBtn loginBtn--outline" id="btnCamOn">Encender cámara</button>
+        <label class="loginBtn loginBtn--outline empSubir hidden" id="lblSubir" for="empCamara">Usar cámara del dispositivo</label>
+        <button class="loginBtn loginBtn--outline hidden" id="btnFoto">Tomar foto</button>
+        <div class="empAcciones hidden" id="empAcciones">
+          <button class="loginBtn loginBtn--outline" id="btnRepetir">Repetir</button>
+          <button class="loginBtn loginBtn--naranja" id="btnEntrar">Entrar</button>
+        </div>
+      </div>
+      <button class="loginLink" id="lnkStaff">Acceso para capacitadores y administración</button>
+    </div>
+
+    <!-- Acceso de capacitador / admin -->
+    <div class="loginCard hidden" id="loginStaff">
+      <div class="loginCardTitle">Capacitadores y administración</div>
       <div class="loginError hidden" id="loginError">Usuario o contraseña incorrectos.</div>
-      <label class="loginLabel">Número de empleado:</label>
+      <label class="loginLabel" for="inputUser">Usuario:</label>
       <input class="loginInput" id="inputUser" type="text" autocomplete="username"/>
-      <label class="loginLabel">Contraseña:</label>
+      <label class="loginLabel" for="inputPass">Contraseña:</label>
       <input class="loginInput" id="inputPass" type="password" autocomplete="current-password"/>
       <button class="loginBtn" id="btnLogin">Ingresar</button>
+      <button class="loginLink" id="lnkGuardia">Soy guardia: entrar con número de empleado</button>
     </div>
+
+    <input type="file" id="empCamara" accept="image/*" capture="user" class="hidden"/>
     <div class="loginFooter">by <strong>SafeR Technologies</strong></div>
   </div>
 </section>
@@ -30,10 +65,22 @@
 <!-- ══════════════ APP SHELL ══════════════ -->
 <div id="appShell" class="app-shell hidden">
 
+  <!-- BANNER DEL GUARDIA (sustituye la barra lateral) -->
+  <header class="guardBanner hidden" id="guardBanner">
+    <div class="guardBanner__marca">
+      <img src="assets/37b28b6cb1.png" alt=""/>
+      <span>Int'Seg<br>Academy</span>
+    </div>
+    <div class="guardBanner__usuario">
+      <span class="guardBanner__nombre" id="guardNombre"></span>
+      <button class="guardBanner__salir" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </header>
+
   <!-- SIDEBAR -->
   <aside class="sidebar hidden" id="sidebar">
     <div class="sidebar__logo">
-      <img src="logo-intseg-nobg.png" alt="IntSeg"/>
+      <img src="assets/37b28b6cb1.png" alt="IntSeg"/>
       <span>Int'Seg<br>Academy</span>
     </div>
     <nav class="sidebar__nav">
@@ -43,11 +90,17 @@
       <button class="sidebar__item" id="sideCursos" onclick="navigate('catalog')">
         <svg viewBox="0 0 24 24"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg>Cursos
       </button>
-      <button class="sidebar__item" id="sideAdmin" onclick="navigate('admin')">
-        <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg>Admin
+      <button class="sidebar__item soloCapacitador hidden" id="sideSesiones" onclick="TR.mostrarLista()">
+        <svg viewBox="0 0 24 24"><path d="M16 11a3 3 0 100-6 3 3 0 000 6zm-8 0a3 3 0 100-6 3 3 0 000 6zm0 2c-2.7 0-8 1.3-8 4v3h16v-3c0-2.7-5.3-4-8-4zm8 0c-.3 0-.7 0-1.1.1 1.3.9 2.1 2.2 2.1 3.9v3h7v-3c0-2.7-5.3-4-8-4z"/></svg>Sesiones
       </button>
-      <button class="sidebar__item role-evid hidden" id="sideEvidencias" onclick="navigate('evidencias')">
+      <button class="sidebar__item soloStaff hidden" id="sideFichas" onclick="FICHAS.mostrarLista()">
+        <svg viewBox="0 0 24 24" ><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM8 12v2h8v-2H8zm0 4v2h8v-2H8zm0-8v2h4V8H8z"/></svg>Fichas técnicas
+      </button>
+      <button class="sidebar__item soloStaff hidden" id="sideEvidencias" onclick="navigate('evidencias')">
         <svg viewBox="0 0 24 24"><path d="M9 2a1 1 0 00-1 1v1H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2V3a1 1 0 00-1-1H9zm6 9l-5 5-3-3 1.41-1.41L10 13.17l3.59-3.58L15 11z"/></svg>Evidencias
+      </button>
+      <button class="sidebar__item soloAdmin hidden" id="sideAdmin" onclick="navigate('admin')">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg>Admin
       </button>
       <button class="sidebar__item" onclick="toast('Ajustes próximamente')">
         <svg viewBox="0 0 24 24"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg>Ajustes
@@ -64,7 +117,7 @@
   <section id="viewCatalog" class="view hidden">
     <header class="topbar">
       <div class="topbar__left">
-        <img class="brand__mini" src="logo-intseg-nobg.png" alt="IntSeg"/>
+        <img class="brand__mini" src="assets/37b28b6cb1.png" alt="IntSeg"/>
         <div class="topbar__title">Catálogo de Cursos</div>
       </div>
     </header>
@@ -80,9 +133,9 @@
       </div>
       <div class="list" id="courseList">
         <article class="courseCard" data-status="new" data-course="dc3">
-          <div class="pill">Certificación DC3</div>
+          <div class="pill">Fundamento Legal</div>
           <div class="courseCard__row">
-            <div class="thumb"><img src="avatar-guardia.png" alt="Fundamento Legal"/></div>
+            <div class="thumb"><img src="assets/ea9d7bb2e8.jpg" alt="Fundamento Legal"/></div>
             <div class="courseCard__main">
               <div class="courseCard__title">Fundamento Legal de la Seguridad Privada</div>
               <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
@@ -93,7 +146,7 @@
         <article class="courseCard" data-status="new" data-course="iso">
           <div class="pill">Certificación Internacional</div>
           <div class="courseCard__row">
-            <div class="thumb"><img src="cover-iso28001.jpg" alt="C-TPAT"/></div>
+            <div class="thumb"><img src="assets/180225137c.jpg" alt="C-TPAT"/></div>
             <div class="courseCard__main">
               <div class="courseCard__title">C-TPAT / OEA: Seguridad en la Cadena de Suministro</div>
               <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
@@ -104,12 +157,56 @@
         <article class="courseCard" data-status="new" data-course="aml">
           <div class="pill">Seguridad Patrimonial</div>
           <div class="courseCard__row">
-            <div class="thumb"><img src="cover-antilavado.jpg" alt="Patrimonial"/></div>
+            <div class="thumb"><img src="assets/28cae2f510.jpg" alt="Patrimonial"/></div>
             <div class="courseCard__main">
               <div class="courseCard__title">Seguridad Patrimonial</div>
               <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
             </div>
             <button class="btnNavy" data-go="detail" data-course="aml">Ver</button>
+          </div>
+        </article>
+        <article class="courseCard" data-status="new" data-course="nextgen">
+          <div class="pill">SafeR NextGen</div>
+          <div class="courseCard__row">
+            <div class="thumb"><img src="assets/fa877c7194.jpg" alt="SafeR NextGen"/></div>
+            <div class="courseCard__main">
+              <div class="courseCard__title">Operación de Seguridad SafeR NextGen</div>
+              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
+            </div>
+            <button class="btnNavy" data-go="detail" data-course="nextgen">Ver</button>
+          </div>
+        </article>
+        <article class="courseCard" data-status="new" data-course="rondines">
+          <div class="pill">Operación en campo</div>
+          <div class="courseCard__row">
+            <div class="thumb"><img src="assets/7240ec0f7f.jpg" alt="Rondines Perimetrales"/></div>
+            <div class="courseCard__main">
+              <div class="courseCard__title">Rondines Perimetrales</div>
+              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
+            </div>
+            <button class="btnNavy" data-go="detail" data-course="rondines">Ver</button>
+          </div>
+        </article>
+        <article class="courseCard" data-status="new" data-course="ehs">
+          <div class="pill">Seguridad e Higiene</div>
+          <div class="courseCard__row">
+            <div class="thumb"><img src="assets/7f3fd35ed4.jpg" alt="Medidas Preventivas de Seguridad e Higiene (EHS)"/></div>
+            <div class="courseCard__main">
+              <div class="courseCard__title">Medidas Preventivas de Seguridad e Higiene (EHS)</div>
+              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
+            </div>
+            <button class="btnNavy" data-go="detail" data-course="ehs">Ver</button>
+          </div>
+        </article>
+        <article class="courseCard" data-status="new" data-course="pld">
+          <div class="pill">Prevención de ilícitos</div>
+          <div class="courseCard__row">
+            <div class="thumb"><img src="assets/ce5091497e.jpg" alt="Detección de Operaciones Ilícitas"/></div>
+            <div class="courseCard__main">
+              <div class="courseCard__title">Detección de Operaciones Ilícitas en Puestos de Control</div>
+              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
+            </div>
+            <button class="btnNavy" data-go="detail" data-course="pld">Ver</button>
           </div>
         </article>
       </div>
@@ -129,24 +226,24 @@
         <button class="iconBtn" data-back="catalog"><svg viewBox="0 0 24 24" class="icon"><path d="M15.5 5l-7 7 7 7 1.5-1.5L11.5 12 17 6.5 15.5 5z"/></svg></button>
         <div class="topbar__title">Detalle del Curso</div>
       </div>
+      <a class="pdfIconBtn hidden" id="btnVerPDF" target="_blank" rel="noopener" title="Descargar presentación (PDF)" aria-label="Descargar presentación en PDF">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l6 6v6h-2V9h-5V4H6v16h6v2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M18 13v5.6l1.8-1.8 1.4 1.4-4.2 4.2-4.2-4.2 1.4-1.4 1.8 1.8V13z"/></svg>
+        <span>PDF</span>
+      </a>
     </header>
     <div class="detailScroll">
       <div class="pill" id="detBadge"></div>
       <div class="detailHeader">
-        <div class="detailAvatar" id="detAvatar"><img src="avatar-guardia.png" alt="Curso"/></div>
+        <div class="detailAvatar" id="detAvatar"><img src="assets/d120120d9c.png" alt="Curso"/></div>
         <div class="detailInfo">
           <div class="detailTitle" id="detTitle"></div>
           <div class="metaRow">
-            <div class="metaItem"><span class="metaDot"><img src="instructor.jpg" alt=""/></span><span><b>Instructor:</b> <span id="detInstructor"></span></span></div>
+            <div class="metaItem"><span class="metaDot"><img src="assets/ce99ec17a0.jpg" alt=""/></span><span><b>Instructor:</b> <span id="detInstructor"></span></span></div>
             <div class="metaItem"><svg viewBox="0 0 24 24" class="metaIcon"><path d="M12 7a1 1 0 011 1v4.382l2.447 1.413a1 1 0 01-1 1.732l-2.947-1.7A1 1 0 0111 13V8a1 1 0 011-1zm0-5a10 10 0 100 20 10 10 0 000-20zm0 2a8 8 0 110 16 8 8 0 010-16z"/></svg><span id="detDuration"></span></div>
           </div>
         </div>
       </div>
       <p class="detailDesc" id="detDesc"></p>
-      <a class="btnVerPDF hidden" id="btnVerPDF" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM12 17H8v-1h4v1zm4-3H8v-1h8v1zm0-3H8v-1h8v1z"/></svg>
-        Ver presentación original (PDF)
-      </a>
       <div class="sectionTitle">Contenido del curso</div>
       <div id="moduleList"></div>
     </div>
@@ -172,6 +269,7 @@
       <div class="quizBody">
         <div class="quizQ" id="quizQuestion"></div>
         <div class="quizOptions" id="quizOptions"></div>
+        <div class="quizFeedback hidden" id="quizFeedback" role="status" aria-live="polite"></div>
       </div>
       <div class="quizFooter">
         <button class="btnPrimaryWide hidden" id="btnNextQ">Siguiente →</button>
@@ -213,6 +311,7 @@
         <button class="adminTab" data-atab="usuarios">👥 Usuarios</button>
         <button class="adminTab" data-atab="cursos">📘 Cursos</button>
         <button class="adminTab" data-atab="evaluaciones">📋 Evaluaciones</button>
+        <button class="adminTab" data-atab="empleados">🪪 Empleados</button>
       </div>
 
       <!-- TAB: DASHBOARD -->
@@ -243,12 +342,48 @@
         <div id="adminEvalTable"></div>
       </div>
 
+      <!-- TAB: EMPLEADOS -->
+      <div id="atab-empleados" class="adminTabContent hidden">
+        <div class="sectionTitle" style="margin-bottom:6px">Lista de empleados</div>
+        <p class="empAyuda">Es la lista con la que se valida el número de empleado del guardia al entrar. Mientras IntsegWeb no esté conectado, se carga aquí. Pega una fila por empleado: <b>número, nombre, área</b> (también sirve copiar desde Excel).</p>
+        <textarea class="editTextarea" id="empImportText" rows="5" placeholder="1042, Juan Pérez López, Operaciones&#10;1043, María Gómez Ruiz, Operaciones"></textarea>
+        <label class="empCheck"><input type="checkbox" id="empImportDesactivar"/> Marcar como inactivos a los empleados que no vengan en esta lista</label>
+        <div class="empImportAcc"><button class="btnPrimary" id="btnEmpImportar">Importar lista</button><span id="empImportMsg" class="empImportMsg"></span></div>
+        <div class="tabToolbar" style="margin-top:18px">
+          <div class="sectionTitle" id="adminEmpleadosResumen">—</div>
+          <input class="editInput" id="empBuscarAdmin" type="search" placeholder="Buscar por nombre o número" style="max-width:260px;margin:0"/>
+        </div>
+        <div id="adminEmpleadosLista"></div>
+      </div>
+
     </div>
     <nav class="bottomNav">
       <button class="navItem" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg><span>Inicio</span></button>
       <button class="navItem" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
       <button class="navItem navItem--active"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg><span>Admin</span></button>
-      <button class="navItem" onclick="toast('Ajustes próximamente')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg><span>Ajustes</span></button>
+      <button class="navItem" onclick="FICHAS.mostrarLista()"><svg viewBox="0 0 24 24" class="navIcon"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM8 12v2h8v-2H8zm0 4v2h8v-2H8zm0-8v2h4V8H8z"/></svg><span>Fichas</span></button>
+    </nav>
+  </section>
+
+  <!-- ══════════════ CAPACITADOR ══════════════ -->
+  <section id="viewTrainer" class="view hidden">
+    <div id="trainerRoot"></div>
+    <nav class="bottomNav">
+      <button class="navItem navItem--active" onclick="TR.mostrarLista()"><svg viewBox="0 0 24 24" class="navIcon"><path d="M16 11a3 3 0 100-6 3 3 0 000 6zm-8 0a3 3 0 100-6 3 3 0 000 6zm0 2c-2.7 0-8 1.3-8 4v3h16v-3c0-2.7-5.3-4-8-4zm8 0c-.3 0-.7 0-1.1.1 1.3.9 2.1 2.2 2.1 3.9v3h7v-3c0-2.7-5.3-4-8-4z"/></svg><span>Sesiones</span></button>
+      <button class="navItem" onclick="FICHAS.mostrarLista()"><svg viewBox="0 0 24 24" class="navIcon"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM8 12v2h8v-2H8zm0 4v2h8v-2H8zm0-8v2h4V8H8z"/></svg><span>Fichas</span></button>
+      <button class="navItem" onclick="refreshCatalog();navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
+      <button class="navItem" onclick="doLogout()"><svg viewBox="0 0 24 24" class="navIcon"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0119 12a7 7 0 11-9.95-6.29V3.52A9 9 0 103 12a9 9 0 007 8.77V18.7A7 7 0 0117.83 5.17z"/></svg><span>Salir</span></button>
+    </nav>
+  </section>
+
+  <!-- ══════════════ FICHAS TÉCNICAS ══════════════ -->
+  <section id="viewFichas" class="view hidden">
+    <div id="fichasRoot"></div>
+    <nav class="bottomNav">
+      <button class="navItem" onclick="TR.mostrarLista()"><svg viewBox="0 0 24 24" class="navIcon"><path d="M16 11a3 3 0 100-6 3 3 0 000 6zm-8 0a3 3 0 100-6 3 3 0 000 6zm0 2c-2.7 0-8 1.3-8 4v3h16v-3c0-2.7-5.3-4-8-4zm8 0c-.3 0-.7 0-1.1.1 1.3.9 2.1 2.2 2.1 3.9v3h7v-3c0-2.7-5.3-4-8-4z"/></svg><span>Sesiones</span></button>
+      <button class="navItem navItem--active" onclick="FICHAS.mostrarLista()"><svg viewBox="0 0 24 24" class="navIcon"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM8 12v2h8v-2H8zm0 4v2h8v-2H8zm0-8v2h4V8H8z"/></svg><span>Fichas</span></button>
+      <button class="navItem" onclick="refreshCatalog();navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
+      <button class="navItem" onclick="doLogout()"><svg viewBox="0 0 24 24" class="navIcon"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0119 12a7 7 0 11-9.95-6.29V3.52A9 9 0 103 12a9 9 0 007 8.77V18.7A7 7 0 0117.83 5.17z"/></svg><span>Salir</span></button>
     </nav>
   </section>
 
@@ -260,28 +395,30 @@
       </div>
     </header>
     <div class="page-content page-content--admin">
-      <div class="tabToolbar">
-        <div style="flex:1;max-width:340px">
-          <label class="editLabel" style="margin-top:0">Elemento (guardia)</label>
-          <select class="editInput" id="evidGuardiaSelect"></select>
-        </div>
-        <button class="btnPrimary" onclick="openEvidModal()">+ Subir evidencia</button>
-      </div>
-      <div class="tabToolbar" style="margin-top:-4px">
-        <div class="sectionTitle" style="margin:0">Historial del elemento</div>
-        <button class="btnAction" title="Descargar expediente completo (ZIP)" onclick="descargarExpediente()" style="width:auto;padding:0 12px;">⬇️ Descargar expediente</button>
+      <label class="editLabel" style="margin-top:0">Empleado (número o nombre)</label>
+      <input class="editInput" id="evidEmp" list="evidEmpList" placeholder="Ej. 1042 o Juan Pérez" autocomplete="off"/>
+      <datalist id="evidEmpList"></datalist>
+      <div class="tabToolbar evidBarra hidden" id="evidAcciones">
+        <button class="btnPrimary" id="btnNuevaEvidencia">+ Subir evidencia</button>
+        <button class="btnAction evidExp" id="btnExpediente" title="Descargar expediente completo (ZIP)">⬇️ Descargar expediente</button>
       </div>
       <div id="evidHistorial"></div>
     </div>
     <nav class="bottomNav">
-      <button class="navItem" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg><span>Inicio</span></button>
-      <button class="navItem" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
-      <button class="navItem role-evid" onclick="navigate('admin')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg><span>Admin</span></button>
+      <button class="navItem" onclick="refreshCatalog();navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
+      <button class="navItem" onclick="FICHAS.mostrarLista()"><svg viewBox="0 0 24 24" class="navIcon"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM8 12v2h8v-2H8zm0 4v2h8v-2H8z"/></svg><span>Fichas</span></button>
       <button class="navItem navItem--active"><svg viewBox="0 0 24 24" class="navIcon"><path d="M9 2a1 1 0 00-1 1v1H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2V3a1 1 0 00-1-1H9zm6 9l-5 5-3-3 1.41-1.41L10 13.17l3.59-3.58L15 11z"/></svg><span>Evidencias</span></button>
+      <button class="navItem" onclick="doLogout()"><svg viewBox="0 0 24 24" class="navIcon"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0119 12a7 7 0 11-9.95-6.29V3.52A9 9 0 103 12a9 9 0 007 8.77V18.7A7 7 0 0117.83 5.17z"/></svg><span>Salir</span></button>
     </nav>
   </section>
 
 </div><!-- /app-shell -->
+
+<!-- Cámara (abre la cámara trasera en celular/tablet) -->
+<input type="file" id="trCamara" accept="image/*" capture="environment" class="hidden"/>
+
+<!-- Área de impresión de evidencias -->
+<div id="printArea" aria-hidden="true"></div>
 
 <!-- MODAL EDITAR CURSO -->
 <div id="modalCurso" class="modalOverlay hidden">
@@ -312,16 +449,16 @@
     <input type="hidden" id="editUserId"/>
     <label class="editLabel">Nombre completo</label>
     <input class="editInput" id="editUserNombre" type="text" placeholder="Ej. Juan García"/>
-    <label class="editLabel">Número de empleado (login)</label>
-    <input class="editInput" id="editUserUser" type="text" placeholder="Ej. 1042"/>
+    <label class="editLabel">Usuario (para entrar)</label>
+    <input class="editInput" id="editUserUser" type="text" placeholder="Ej. guardia02"/>
     <label class="editLabel" id="editUserPassLabel">Contraseña</label>
     <input class="editInput" id="editUserPass" type="text" placeholder="Mínimo 6 caracteres"/>
     <label class="editLabel">Rol</label>
     <select class="editInput" id="editUserRole">
-      <option value="guardia">Guardia</option>
       <option value="supervisor">Supervisor</option>
-      <option value="maestro">Instructor</option>
+      <option value="maestro">Capacitador</option>
       <option value="admin">Administrador</option>
+      <option value="guardia">Guardia</option>
     </select>
     <label class="editLabel">Estado</label>
     <select class="editInput" id="editUserStatus">
@@ -336,14 +473,15 @@
   </div>
 </div>
 
+
 <!-- MODAL SUBIR EVIDENCIA -->
 <div id="modalEvidencia" class="modalOverlay hidden">
   <div class="modal">
     <div class="modal__title">Subir evidencia de entrenamiento</div>
-    <label class="editLabel" style="margin-top:0">Elemento (guardia)</label>
-    <select class="editInput" id="evidModalGuardia"></select>
+    <div class="evidModalEmp" id="evidModalEmp"></div>
     <label class="editLabel">Tipo de entrenamiento</label>
-    <input class="editInput" id="evidEntrenamiento" type="text" placeholder="Ej. Uso de la fuerza, Rondines, C-TPAT..."/>
+    <input class="editInput" id="evidEntrenamiento" list="evidTipoList" type="text" placeholder="Ej. Uso de la fuerza, Rondines, C-TPAT…"/>
+    <datalist id="evidTipoList"></datalist>
     <label class="editLabel">Tipo de evidencia</label>
     <select class="editInput" id="evidTipo">
       <option value="Foto">Foto</option>
@@ -356,7 +494,7 @@
     <label class="editLabel">Archivo</label>
     <input class="editInput" id="evidArchivo" type="file" accept="image/*,video/*,application/pdf"/>
     <label class="editLabel">Notas (opcional)</label>
-    <textarea class="editTextarea" id="evidNotas" rows="2" placeholder="Observaciones adicionales..."></textarea>
+    <textarea class="editTextarea" id="evidNotas" rows="2" placeholder="Observaciones adicionales…"></textarea>
     <div id="evidModalError" class="loginError hidden" style="margin-top:10px"></div>
     <div class="modal__actions">
       <button class="modal__btn modal__btn--cancel" id="btnCancelEvid">Cancelar</button>
@@ -366,8 +504,18 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="./app.js"></script>
+<script src="config.js"></script>
+<script src="cursos.js"></script>
+<script src="datos.js"></script>
+<script src="app.js"></script>
+<script src="capacitador.js"></script>
+<script src="fichas.js"></script>
+<script src="evidencias.js"></script>
+
+
+
+
+
 </body>
 </html>

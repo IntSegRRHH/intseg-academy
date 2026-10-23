@@ -1,144 +1,99 @@
 /**
- * IntSeg Academy — app.js v3.0
- * Backend real: Supabase (Auth + Postgres + Storage + RLS)
- * Requiere config.js cargado ANTES de este archivo con SUPABASE_URL y SUPABASE_ANON_KEY.
+ * IntSeg Academy — app.js v3.0 (Supabase)
+ * Login del personal con Supabase Auth, acceso del guardia por número de empleado + foto
+ * (Edge Function acceso-guardia), avance de evaluaciones y administración en la nube.
+ * Depende de: datos.js (sb, DB, EMPLEADOS), cursos.js (COURSE_CONTENT, QUIZZES).
  */
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const EMAIL_DOMINIO = "@intseg.local"; // login por número de empleado → email sintético
-
-
-const COURSE_CONTENT = {
-  dc3: {
-    badge:"Certificación DC3",
-    title:"Fundamento Legal de la Seguridad Privada",
-    instructor:"Elly Escoto",
-    duration:"2 horas",
-    img:"avatar-guardia.png",
-    pdf:"Fundamento_Legal.pdf",
-    desc:"Conoce el marco normativo que regula la seguridad privada en México: leyes aplicables, uso de la fuerza, manejo de evidencia y responsabilidades del guardia.",
-    modules:[
-      { title:"Módulo 1 — ¿Por qué conocer el marco legal?", items:["Conocer y entender las leyes te ayuda a actuar de forma adecuada y justa.","Protege tanto a los ciudadanos como al propio guardia de consecuencias legales.","⚠️ La ley NO te exime de responsabilidad por desconocimiento."] },
-      { title:"Módulo 2 — Legislación y regulaciones aplicables", items:["🔺 Constitución Política de los Estados Unidos Mexicanos (norma máxima).","Ley General del Sistema Nacional de Seguridad Pública.","Ley Federal de Seguridad Privada.","Ley Nacional del Uso de la Fuerza.","Reglamentos estatales y municipales.","Reglamento Interior de Trabajo — derechos y obligaciones del personal."] },
-      { title:"Módulo 3 — Uso de la fuerza (Art. 11)", items:["Presencia de Autoridad: la sola presencia visible e identificable del guardia disuade conductas ilícitas.","El guardia debe mantener actitud profesional en todo momento.","Principios: Legalidad, Necesidad y Proporcionalidad.","PR-24 y gas chile: solo en caso de ABSOLUTA NECESIDAD cuando la integridad esté en riesgo."] },
-      { title:"Módulo 4 — Manejo de evidencia e informes", items:["Cadena de custodia: mantener integridad y autenticidad de la evidencia.","Documenta: tipo de evidencia, fecha, hora, lugar y quien la recolectó.","El informe debe ser claro, conciso, formal y objetivo.","Adjunta fotografías, diagramas y registros pertinentes.","Resguarda en lugar seguro. Mantén absoluta discreción."] },
-      { title:"Módulo 5 — Responsabilidades y sanciones", items:["Responsabilidad Civil: obligaciones frente a terceros por daños causados.","Responsabilidad Penal: infracciones que constituyen delitos (prisión o multas).","Responsabilidad Administrativa: infracciones a normas administrativas.","Las sanciones varían: multa, prisión o trabajo comunitario.","💡 Respetar y hacer respetar los derechos de las personas."] },
-    ]
-  },
-  iso: {
-    badge:"Certificación Internacional",
-    title:"C-TPAT / OEA: Seguridad en la Cadena de Suministro",
-    instructor:"Elly Escoto",
-    duration:"4 horas",
-    img:"cover-iso28001.jpg",
-    pdf:"CTPAT_OEA.pdf",
-    desc:"Estándares C-TPAT y OEA para asegurar la cadena de suministro. Inspección de vehículos, sellos, paquetes sospechosos y control de acceso.",
-    modules:[
-      { title:"Módulo 1 — ¿Qué es C-TPAT y OEA?", items:["C-TPAT: Asociación Comercial Contra el Terrorismo (programa de CBP/EE.UU.).","OEA: Operador Económico Autorizado, impulsado por la Organización Mundial de Aduanas (OMA).","Objetivo: asegurar la cadena de suministro desde el origen hasta el destino."] },
-      { title:"Módulo 2 — Control de acceso de personas", items:["Todo visitante debe presentar identificación oficial vigente.","Visitantes extranjeros: ID oficial + Formato Migratorio Múltiple (FMM).","Registrar: nombre, empresa, hora de entrada/salida, motivo.","Conducta sospechosa: fotografías sin autorización, merodear sin destino."] },
-      { title:"Módulo 3 — Recorridos perimetrales", items:["Verificar: barreras, puertas, estacionamientos, lámparas, cámaras y personas no autorizadas.","Principal herramienta de alerta: oído, olfato y vista.","Reportar de inmediato cualquier anomalía al supervisor."] },
-      { title:"Módulo 4 — Inspección de vehículos y sellos", items:["Los vehículos de carga se inspeccionan en 17 puntos.","Método VVTT — Ver, Verificar, Tira, Torcer/Girar.","Señales de contaminación: olores inusuales, compartimentos ocultos, modificaciones.","El número de placas vigente NO es señal de contaminación."] },
-      { title:"Módulo 5 — Paquetes y objetos sospechosos", items:["Señales: peso desproporcionado, olores químicos, embalaje en mal estado.","Ante paquete sospechoso: NO mover, NO abrir. Aislar y reportar.","Aplicar las 3 C: Confirmar, Comunicar, Controlar el perímetro."] },
-    ]
-  },
-  aml: {
-    badge:"Seguridad Patrimonial",
-    title:"Seguridad Patrimonial",
-    instructor:"Elly Escoto",
-    duration:"2 horas",
-    img:"cover-antilavado.jpg",
-    pdf:"Seguridad_Patrimonial.pdf",
-    desc:"Funciones del guardia: controles de acceso, rondines, reporte de incidentes, actos y condiciones inseguros, y manejo de emergencias.",
-    modules:[
-      { title:"Módulo 1 — Funciones principales del guardia", items:["1. Controles de acceso — registrar y autorizar entradas y salidas.","2. Revisiones — SOLO por consigna del cliente, nunca por iniciativa propia.","3. Rondines — observando, escuchando e identificando aromas extraños.","4. Reporte diario — fecha, hora, personas involucradas y medidas tomadas."] },
-      { title:"Módulo 2 — Actos y condiciones inseguros", items:["Acto inseguro: acción del trabajador que representa riesgo (ignorar procedimientos, no usar EPP).","Condición insegura: situación del entorno que representa peligro.","Ejemplos: iluminación fallando, mallas rotas, cámaras fuera de servicio.","El guardia debe reportar ambos tipos al supervisor sin ignorarlos."] },
-      { title:"Módulo 3 — Manejo de emergencias", items:["🔥 Incendio: revisar equipo, verificar rutas de evacuación, coordinar con emergencias (9-1-1).","📞 Extorsión: conservar calma, NO dar datos, colgar e informar al supervisor.","Los extorsionadores operan en horarios inhábiles: noches y fines de semana.","Número de emergencias: 9-1-1 y/o 089."] },
-      { title:"Módulo 4 — Reporte de incidentes", items:["Todo incidente debe quedar documentado por escrito.","Incluir: fecha, hora, lugar, personas involucradas, descripción y medidas tomadas.","Usar lenguaje claro, objetivo, sin opiniones personales.","Entregar al supervisor al término del turno o de inmediato si es urgente."] },
-    ]
-  },
-};
-
-const QUIZZES = {
-  dc3:[
-    {q:"¿Qué establece la ley respecto al desconocimiento del marco legal?",opts:["Reduce la sanción si el guardia no sabía","Permite una advertencia antes de sancionar","No exime de responsabilidad por desconocerlo","Solo aplica a mandos superiores"],ans:2},
-    {q:"¿Cuál es la norma de mayor jerarquía que regula la actuación del guardia?",opts:["Ley Federal de Seguridad Privada","Reglamento Interior de Trabajo","Constitución Política de los Estados Unidos Mexicanos","Reglamentos municipales"],ans:2},
-    {q:"Según el Art. 11, ¿en qué consiste la 'Presencia de Autoridad'?",opts:["En intervenir físicamente ante cualquier amenaza","En la sola presencia visible, identificable y profesional del guardia para disuadir conductas ilícitas","En portar armamento visible en todo momento","En patrullar constantemente el perímetro"],ans:1},
-    {q:"¿Bajo qué principios debe basarse el uso de la fuerza?",opts:["Discreción, rapidez y contundencia","Autoridad, disciplina y obediencia","Legalidad, necesidad y proporcionalidad","Prevención, detención y reporte"],ans:2},
-    {q:"¿En qué caso se permite usar armas menos letales como el PR-24 o gas chile?",opts:["Ante cualquier persona que no obedezca","Cuando el supervisor lo autorice","Solo en caso de absoluta necesidad, cuando la integridad del guardia o de quienes cuida esté en riesgo","Durante rondines nocturnos"],ans:2},
-    {q:"¿Qué tipo de responsabilidad implica causar daños y perjuicios a terceros?",opts:["Penal","Civil","Administrativa","Laboral"],ans:1},
-    {q:"¿Qué tipo de responsabilidad se genera al infringir regulaciones administrativas?",opts:["Civil","Penal","Administrativa","Contractual"],ans:2},
-    {q:"¿Qué es la cadena de custodia?",opts:["El protocolo de rondines perimetrales","El proceso para mantener integridad y autenticidad de la evidencia haciéndola admisible legalmente","El registro de entradas y salidas de visitantes","El sistema de comunicación entre supervisores"],ans:1},
-    {q:"Al redactar un informe sobre evidencia, el guardia debe:",opts:["Usar lenguaje informal para mayor claridad","Resumir sin detalles para agilizar el proceso","Usar lenguaje formal y objetivo, describir detalladamente e incluir fotografías y registros","Esperar instrucciones del cliente antes de redactarlo"],ans:2},
-    {q:"¿Cuál es la responsabilidad del guardia respecto a los derechos de las personas?",opts:["Aplicarlos solo con empleados del cliente","Conocerlos pero priorizando la seguridad del inmueble","Reportar cualquier violación sin intervenir","Respetar y hacer respetar los derechos de las personas en todo momento"],ans:3},
-  ],
-  iso:[
-    {q:"¿Qué significa C-TPAT?",opts:["Certificación de Transporte y Prevención de Amenazas","Asociación Comercial Contra el Terrorismo","Control Total de Puertos y Aduanas de Tijuana","Código de Transporte Aduanal y Prevención"],ans:1},
-    {q:"Al recibir a un visitante extranjero, el guardia debe solicitar:",opts:["Solo pasaporte vigente","ID oficial vigente y formato migratorio (FMM)","Carta de invitación de la empresa","Credencial de elector mexicana"],ans:1},
-    {q:"¿Qué organismo internacional impulsa el programa OEA?",opts:["Organización de las Naciones Unidas (ONU)","Cámara Internacional de Comercio (ICC)","Organización Mundial de Aduanas (OMA)","Banco Mundial"],ans:2},
-    {q:"¿Cuál es la principal responsabilidad del guardia en el contexto C-TPAT/OEA?",opts:["Verificar documentos de importación","Alerta mediante oído, olfato y vista","Operar el sistema de cámaras CCTV","Coordinar con agentes aduanales"],ans:1},
-    {q:"Durante un recorrido perimetral, el guardia debe verificar:",opts:["Solo el área de carga y descarga","Únicamente las cámaras de seguridad","Barreras, puertas, estacionamientos, lámparas, cámaras y personas sospechosas","El inventario de mercancía en bodega"],ans:2},
-    {q:"¿Cuál es el método correcto para inspeccionar sellos de seguridad?",opts:["PASS (Pull, Aim, Squeeze, Sweep)","VVTT (Ver, Verificar, Tira, Torcer/Girar)","LINCE (Localizar, Inspeccionar, Notificar, Confirmar, Evaluar)","RAPID (Revisar, Analizar, Prevenir, Informar, Documentar)"],ans:1},
-    {q:"¿Cuántos puntos comprende la inspección de un vehículo de carga?",opts:["7 puntos","12 puntos","17 puntos","21 puntos"],ans:2},
-    {q:"¿Cuál de estas opciones NO es señal de posible contaminación en un vehículo?",opts:["Olores inusuales o químicos","Compartimentos ocultos o modificaciones","Número de placas vigente y en regla","Inconsistencias en el sello o precinto"],ans:2},
-    {q:"¿Cómo se puede identificar un paquete sospechoso?",opts:["Por el color del embalaje","Por su lugar de origen solamente","Por peso desproporcionado y olores químicos inusuales","Por el número de etiquetas que tiene"],ans:2},
-    {q:"¿Qué conducta hace sospechosa a una persona en instalaciones protegidas?",opts:["Usar uniforme de trabajo","Entrar por el acceso principal","Tomar fotografías o videos sin autorización","Preguntar por el supervisor de turno"],ans:2},
-  ],
-  aml:[
-    {q:"¿Cuáles son las 4 funciones principales del guardia de seguridad patrimonial?",opts:["Investigar, arrestar, perseguir, reportar","Controles de acceso, revisiones, rondines y reporte diario","Monitorear CCTV, atender visitantes, abrir puertas, notificar","Escoltar, registrar, asegurar y comunicar"],ans:1},
-    {q:"¿Cuándo puede el guardia realizar revisiones a personas o vehículos?",opts:["Cuando lo considere necesario","En cualquier momento del turno","Solo por consigna del cliente","Solo cuando haya sospecha de delito"],ans:2},
-    {q:"Durante un rondín, el guardia debe:",opts:["Caminar lo más rápido posible","Mantenerse solo en el perímetro exterior","Observar, escuchar e identificar aromas extraños","Evitar acercarse a áreas oscuras"],ans:2},
-    {q:"¿Qué es un acto inseguro?",opts:["Una falla en el equipo electrónico","Una condición ambiental de riesgo","Una acción del trabajador que representa riesgo, como ignorar procedimientos o no usar EPP","Un incidente ya ocurrido"],ans:2},
-    {q:"¿Cuál es un ejemplo de condición insegura que el guardia debe reportar?",opts:["Un visitante que llegó tarde","Una cámara fuera de servicio o malla perimetral rota","Un vehículo en zona permitida","Un empleado en horas extras"],ans:1},
-    {q:"Ante un conato de incendio, el guardia debe:",opts:["Evacuar sin avisar a nadie","Intentar apagarlo solo","Revisar equipo, verificar salidas y coordinar con emergencias","Esperar instrucciones del cliente"],ans:2},
-    {q:"Ante una llamada de extorsión, el guardia debe:",opts:["Negociar con el extorsionador","Transferir al área de finanzas","Conservar la calma, no dar datos, colgar e informar al supervisor","Grabar sin informar a nadie"],ans:2},
-    {q:"¿En qué horarios suelen operar los extorsionadores?",opts:["Horarios de oficina de 9 a 5","Solo en días festivos","En horarios inhábiles: noches y fines de semana","Durante cambios de turno"],ans:2},
-    {q:"¿Qué información debe incluir el reporte diario del guardia?",opts:["Solo los incidentes graves","Fecha, hora, personas involucradas y medidas tomadas","Solo entradas y salidas de vehículos","El número de visitantes y sus nombres"],ans:1},
-    {q:"¿Cuál es el número de emergencias al que debe reportar el guardia?",opts:["800-911-2000","070","9-1-1 (y/o 089)","55-5588-4444"],ans:2},
-  ],
-};
 // ── Estado ─────────────────────────────────────────────────
-let currentUser = null;       // {id, numero_empleado, nombre, rol, estado}
+let currentUser = null;      // { id, nombre, user, role, status, numEmpleado, fotoAcceso?, accesoEn? }
 let currentCourseKey = null;
 let quizState = {};
-let progresoCache = {};       // {curso_key: {passed,score,date}} del usuario actual
-let guardiasCache = [];       // [{id,nombre,numero_empleado}] rol=guardia
-let usersCache = [];          // todos los perfiles (para el panel admin)
 
-// ── Helper: llamar Edge Functions con el token de sesión ────
-async function callEdgeFunction(fnName, body){
-  const { data: sessionData } = await sb.auth.getSession();
-  const token = sessionData?.session?.access_token;
-  const resp = await fetch(`${SUPABASE_URL}/functions/v1/${fnName}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
-      "apikey": SUPABASE_ANON_KEY
-    },
-    body: JSON.stringify(body)
+// Perfil de Supabase → usuario de la app (mantiene los nombres que ya usaba la interfaz)
+function perfilAUsuario(p) {
+  return {
+    id: p.id, nombre: p.nombre, user: p.numero_empleado, role: p.rol, status: p.estado,
+    numEmpleado: p.rol === "guardia" ? p.numero_empleado : null, createdAt: p.created_at,
+  };
+}
+const esStaff = (u = currentUser) => !!u && ["admin", "maestro", "supervisor"].includes(u.role);
+
+// ── Avance de evaluaciones (Supabase, tabla progreso) ──────
+let PROGRESO_PROPIO = {};   // { curso: { passed, score, date, intentos } } del usuario actual
+let PROGRESO_TODOS = {};    // { numero_empleado: { curso: {...} } }  (solo personal)
+let USUARIOS = [];          // perfiles de todos los usuarios (solo personal)
+
+async function cargarProgresoPropio() {
+  PROGRESO_PROPIO = {};
+  const { data, error } = await sb.from("progreso").select("*").eq("guardia_id", currentUser.id);
+  if (error) { console.error("cargarProgresoPropio:", error.message); return; }
+  (data || []).forEach((r) => { PROGRESO_PROPIO[r.curso_key] = { passed: r.passed, score: r.score, date: r.fecha, intentos: r.intentos }; });
+}
+async function cargarProgresoTodos() {
+  PROGRESO_TODOS = {};
+  const { data, error } = await sb.from("progreso").select("*, perfiles(numero_empleado)");
+  if (error) { console.error("cargarProgresoTodos:", error.message); return; }
+  (data || []).forEach((r) => {
+    const num = r.perfiles?.numero_empleado;
+    if (!num) return;
+    (PROGRESO_TODOS[num] = PROGRESO_TODOS[num] || {})[r.curso_key] = { passed: r.passed, score: r.score, date: r.fecha, intentos: r.intentos };
   });
-  const json = await resp.json().catch(()=>({}));
-  if(!resp.ok) throw new Error(json.error || "Error del servidor");
-  return json;
+}
+async function cargarUsuarios() {
+  const { data, error } = await sb.from("perfiles").select("*").order("created_at");
+  if (error) { console.error("cargarUsuarios:", error.message); return; }
+  USUARIOS = (data || []).map(perfilAUsuario);
+}
+function getUsersDB() { return USUARIOS; }
+function getProgress(courseKey) { return PROGRESO_PROPIO[courseKey] || null; }
+function getAllProgress(user) {
+  if (!user || user === currentUser?.user) return PROGRESO_PROPIO;
+  return PROGRESO_TODOS[user] || {};
+}
+async function saveProgress(courseKey, passed, score) {
+  const prev = PROGRESO_PROPIO[courseKey];
+  const intentos = (prev?.intentos || 0) + 1;
+  // Se conserva la última aprobación: un intento reprobado no borra una aprobación previa
+  const nuevo = prev && prev.passed && !passed
+    ? { ...prev, intentos }
+    : { passed, score, date: new Date().toISOString(), intentos };
+  PROGRESO_PROPIO[courseKey] = nuevo;
+  const { error } = await sb.from("progreso").upsert(
+    { guardia_id: currentUser.id, curso_key: courseKey, score: nuevo.score, passed: nuevo.passed, fecha: nuevo.date, intentos },
+    { onConflict: "guardia_id,curso_key" }
+  );
+  if (error) { console.error("saveProgress:", error.message); toast("No se pudo guardar tu avance. Revisa tu conexión."); }
 }
 
 // ── Navegación ─────────────────────────────────────────────
 function navigate(name) {
-  ["viewLogin","viewCatalog","viewDetail","viewAdmin","viewQuiz","viewResult","viewEvidencias"].forEach(id=>{
+  ["viewLogin","viewCatalog","viewDetail","viewAdmin","viewQuiz","viewResult","viewTrainer","viewFichas","viewEvidencias"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.add("hidden");
   });
   document.getElementById("appShell").classList.add("hidden");
   if(name==="login"){document.getElementById("viewLogin").classList.remove("hidden");return;}
   document.getElementById("appShell").classList.remove("hidden");
-  document.getElementById("sidebar").classList.remove("hidden");
-  const map={catalog:"viewCatalog",detail:"viewDetail",admin:"viewAdmin",quiz:"viewQuiz",result:"viewResult",evidencias:"viewEvidencias"};
+  const esGuardia=currentUser&&currentUser.role==="guardia";
+  document.body.classList.toggle("rol-guardia",!!esGuardia);
+  document.getElementById("sidebar").classList.toggle("hidden",!!esGuardia);
+  document.getElementById("guardBanner").classList.toggle("hidden",!esGuardia);
+  if(esGuardia)document.getElementById("guardNombre").textContent=currentUser.nombre;
+  const map={catalog:"viewCatalog",detail:"viewDetail",admin:"viewAdmin",quiz:"viewQuiz",result:"viewResult",trainer:"viewTrainer",fichas:"viewFichas",evidencias:"viewEvidencias"};
   if(map[name]) document.getElementById(map[name]).classList.remove("hidden");
   document.querySelectorAll(".sidebar__item").forEach(i=>i.classList.remove("active"));
   if(name==="catalog"){document.getElementById("sideInicio")?.classList.add("active");document.getElementById("sideCursos")?.classList.add("active");}
   if(name==="admin"){document.getElementById("sideAdmin")?.classList.add("active");}
+  if(name==="trainer"){document.getElementById("sideSesiones")?.classList.add("active");}
+  if(name==="fichas"){document.getElementById("sideFichas")?.classList.add("active");}
   if(name==="evidencias"){document.getElementById("sideEvidencias")?.classList.add("active");}
+  // Visibilidad por rol: capacitador = maestro/admin; personal = supervisor/maestro/admin
+  const esCap=currentUser&&(currentUser.role==="maestro"||currentUser.role==="admin");
+  document.querySelectorAll(".soloCapacitador").forEach(el=>el.classList.toggle("hidden",!esCap));
+  document.querySelectorAll(".soloStaff").forEach(el=>el.classList.toggle("hidden",!esStaff()));
+  document.querySelectorAll(".soloAdmin").forEach(el=>el.classList.toggle("hidden",!(currentUser&&currentUser.role==="admin")));
   if(name==="admin") renderAdmin();
-  if(name==="evidencias") renderEvidencias();
+  if(name==="evidencias") EVID.mostrar();
   window.scrollTo(0,0);
 }
 
@@ -150,81 +105,193 @@ function toast(msg){
   if(_tt)clearTimeout(_tt);_tt=setTimeout(()=>el.classList.add("hidden"),2500);
 }
 
-// ── Login / Logout ───────────────────────────────────────────
-async function doLogin(){
-  const u=document.getElementById("inputUser").value.trim().toLowerCase();
-  const p=document.getElementById("inputPass").value.trim();
-  const err=document.getElementById("loginError");
-  const btn=document.getElementById("btnLogin");
-  if(!u||!p) return;
-
-  err.classList.add("hidden");
-  btn.disabled=true; btn.textContent="Ingresando…";
-
-  const { data, error } = await sb.auth.signInWithPassword({ email: u+EMAIL_DOMINIO, password:p });
-
-  if(error || !data?.user){
-    btn.disabled=false; btn.textContent="Ingresar";
-    err.textContent="Usuario o contraseña incorrectos.";
-    err.classList.remove("hidden"); setTimeout(()=>err.classList.add("hidden"),3000);
-    return;
-  }
-
-  const { data: perfil, error: perfilErr } = await sb.from("perfiles").select("*").eq("id", data.user.id).single();
-  btn.disabled=false; btn.textContent="Ingresar";
-
-  if(perfilErr || !perfil){
-    err.textContent="No se encontró el perfil de este usuario. Contacta al administrador.";
-    err.classList.remove("hidden");
-    await sb.auth.signOut();
-    return;
-  }
-  if(perfil.estado==="inactivo"){
-    err.textContent="Cuenta desactivada. Contacta al administrador.";
-    err.classList.remove("hidden"); setTimeout(()=>err.classList.add("hidden"),4000);
-    await sb.auth.signOut();
-    return;
-  }
-
-  currentUser = perfil;
-  await cargarProgresoUsuario();
+// ── Inicio de sesión ───────────────────────────────────────
+// Deja lista la sesión: avance propio y, si es personal, usuarios, avance de todos y empleados.
+async function iniciarSesion(usuario, extra = {}) {
+  currentUser = { ...usuario, ...extra };
+  await cargarProgresoPropio();
+  if (esStaff()) await Promise.all([cargarUsuarios(), cargarProgresoTodos(), EMPLEADOS.cargar()]);
   refreshCatalog();
-  applyRoleVisibility();
-  if(perfil.rol==="admin"||perfil.rol==="maestro") navigate("admin");
-  else if(perfil.rol==="supervisor") navigate("evidencias");
-  else navigate("catalog");
+  if (currentUser.role === "maestro") TR.mostrarLista();
+  else if (currentUser.role === "supervisor") navigate("evidencias");
+  else navigate(currentUser.role === "admin" ? "admin" : "catalog");
 }
 
-function applyRoleVisibility(){
-  const canSeeEvid = currentUser && ["admin","maestro","supervisor"].includes(currentUser.rol);
-  document.querySelectorAll(".role-evid").forEach(el=> el.classList.toggle("hidden", !canSeeEvid));
+function mostrarErrorLogin(msg, ms = 3500) {
+  const err = document.getElementById("loginError");
+  err.textContent = msg; err.classList.remove("hidden");
+  setTimeout(() => err.classList.add("hidden"), ms);
+}
+
+// Personal (capacitador, supervisor, admin): usuario + contraseña
+async function doLogin(){
+  const u=document.getElementById("inputUser").value.trim().toLowerCase();
+  const p=document.getElementById("inputPass").value;
+  const btn=document.getElementById("btnLogin");
+  if(!u||!p) return;
+  btn.disabled=true; btn.textContent="Ingresando…";
+  try{
+    const { data, error } = await sb.auth.signInWithPassword({ email: u+EMAIL_DOMINIO, password: p });
+    if(error||!data?.user){ mostrarErrorLogin("Usuario o contraseña incorrectos."); return; }
+    const { data: perfil } = await sb.from("perfiles").select("*").eq("id", data.user.id).maybeSingle();
+    if(!perfil){ await sb.auth.signOut(); mostrarErrorLogin("No se encontró el perfil de este usuario. Contacta al administrador.", 4500); return; }
+    if(perfil.rol==="guardia"){ await sb.auth.signOut(); mostrarErrorLogin("Los guardias entran con su número de empleado.", 4000); return; }
+    if(perfil.estado==="inactivo"){ await sb.auth.signOut(); mostrarErrorLogin("Cuenta desactivada. Contacta al administrador.", 4000); return; }
+    await iniciarSesion(perfilAUsuario(perfil));
+  } finally {
+    btn.disabled=false; btn.textContent="Ingresar";
+  }
 }
 
 async function doLogout(){
-  await sb.auth.signOut();
-  currentUser=null;currentCourseKey=null;progresoCache={};
+  closeSlides();
+  try { await sb.auth.signOut(); } catch(e) {}
+  currentUser=null;currentCourseKey=null;
+  PROGRESO_PROPIO={};PROGRESO_TODOS={};USUARIOS=[];EMPLEADOS.limpiar();
   document.getElementById("inputUser").value="";
   document.getElementById("inputPass").value="";
+  document.body.classList.remove("rol-guardia");
+  ACCESO.reiniciar();
   navigate("login");
 }
 
-// ── Progreso (backend real) ─────────────────────────────────
-async function cargarProgresoUsuario(){
-  progresoCache = {};
-  const { data, error } = await sb.from("progreso").select("*").eq("guardia_id", currentUser.id);
-  if(error) return;
-  (data||[]).forEach(r=>{ progresoCache[r.curso_key] = { passed:r.passed, score:r.score, date:r.fecha }; });
-}
-function getProgress(courseKey){ return progresoCache[courseKey] || null; }
-function getAllProgress(){ return progresoCache; }
-async function saveProgress(courseKey, passed, score){
-  progresoCache[courseKey] = { passed, score, date: new Date().toISOString() };
-  const { error } = await sb.from("progreso").upsert(
-    { guardia_id: currentUser.id, curso_key: courseKey, score, passed, fecha: new Date().toISOString() },
-    { onConflict: "guardia_id,curso_key" }
-  );
-  if(error) console.error("saveProgress:", error.message);
-}
+// ── Acceso del guardia: número de empleado + foto ─────────────
+// Simula el flujo de IntsegWeb. En producción, IntsegWeb valida al empleado
+// y la foto queda como evidencia del acceso.
+const ACCESO = (() => {
+  const $ = (id) => document.getElementById(id);
+  let empleado = null, stream = null, foto = null;
+
+  function error(msg) {
+    const e = $("empError"); e.textContent = msg; e.classList.remove("hidden");
+    setTimeout(() => e.classList.add("hidden"), 4000);
+  }
+  function apagarCamara() {
+    if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
+    $("empVideo").classList.add("hidden");
+  }
+  function mostrar(estado) {
+    // estado: "inicio" | "camara" | "foto"
+    $("empVacio").classList.toggle("hidden", estado !== "inicio");
+    $("empVideo").classList.toggle("hidden", estado !== "camara");
+    $("empImg").classList.toggle("hidden", estado !== "foto");
+    $("btnCamOn").classList.toggle("hidden", estado !== "inicio");
+    if (estado !== "inicio") $("lblSubir").classList.add("hidden");
+    $("btnFoto").classList.toggle("hidden", estado !== "camara");
+    $("empAcciones").classList.toggle("hidden", estado !== "foto");
+  }
+  async function registrar() {
+    const num = $("empNum").value.trim();
+    if (!num) { error("Escribe tu número de empleado."); $("empNum").focus(); return; }
+    empleado = await EMPLEADOS.buscar(num);
+    if (!empleado) { $("empPaso").classList.add("hidden"); error("Número de empleado no encontrado."); return; }
+    $("empError").classList.add("hidden");
+    $("empNombre").textContent = empleado.nombre;
+    $("empPaso").classList.remove("hidden");
+    foto = null; apagarCamara(); aviso(""); $("lblSubir").classList.add("hidden"); mostrar("inicio");
+  }
+  function aviso(msg) {
+    const el = $("empAviso");
+    el.textContent = msg || "";
+    el.classList.toggle("hidden", !msg);
+  }
+  // Si la cámara del navegador no está disponible, se ofrece un botón nativo
+  // que abre la cámara del celular o el selector de archivos (siempre funciona).
+  function ofrecerRespaldo(motivo) {
+    aviso(motivo);
+    $("btnCamOn").classList.add("hidden");
+    $("lblSubir").classList.remove("hidden");
+  }
+  async function encenderCamara() {
+    aviso("");
+    // Archivos abiertos desde el celular (content://, file://) no son "contexto seguro":
+    // el navegador no permite la cámara en vivo, pero el botón nativo sí funciona.
+    if (!window.isSecureContext && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+      ofrecerRespaldo("Abierto como archivo, el navegador no permite la cámara en vivo. Toca el botón de abajo para tomar tu foto.");
+      return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      ofrecerRespaldo("Este navegador no permite abrir la cámara aquí.");
+      return;
+    }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+      const v = $("empVideo");
+      v.srcObject = stream;
+      await v.play().catch(() => {});
+      mostrar("camara");
+    } catch (e) {
+      const n = e && e.name;
+      if (n === "NotAllowedError" || n === "SecurityError")
+        ofrecerRespaldo("No se dio permiso para la cámara. Actívalo en el candado de la barra de direcciones, o usa el botón de abajo.");
+      else if (n === "NotReadableError" || n === "AbortError")
+        ofrecerRespaldo("La cámara está en uso por otra aplicación (por ejemplo Meet o Teams). Ciérrala o usa el botón de abajo.");
+      else if (n === "NotFoundError" || n === "OverconstrainedError")
+        ofrecerRespaldo("No se encontró una cámara en este equipo.");
+      else ofrecerRespaldo("No se pudo abrir la cámara.");
+    }
+  }
+  function reducir(src, cb) {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 720 / Math.max(img.width, img.height));
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+      cb(cv.toDataURL("image/jpeg", 0.72));
+    };
+    img.src = src;
+  }
+  function tomarFoto() {
+    const v = $("empVideo");
+    if (!v.videoWidth) { aviso("La cámara aún se está preparando, intenta de nuevo en un momento."); return; }
+    aviso("");
+    const cv = document.createElement("canvas");
+    cv.width = v.videoWidth; cv.height = v.videoHeight;
+    cv.getContext("2d").drawImage(v, 0, 0);
+    reducir(cv.toDataURL("image/jpeg", 0.9), (d) => { foto = d; $("empImg").src = d; apagarCamara(); mostrar("foto"); });
+  }
+  function fotoDeArchivo(file) {
+    if (!file) return;
+    const lr = new FileReader();
+    lr.onload = () => reducir(lr.result, (d) => { foto = d; $("empImg").src = d; aviso(""); mostrar("foto"); $("lblSubir").classList.add("hidden"); });
+    lr.readAsDataURL(file);
+  }
+  async function entrar() {
+    if (!empleado || !foto) return;
+    const btn = $("btnEntrar");
+    btn.disabled = true; btn.textContent = "Entrando…";
+    try {
+      const r = await llamarAccesoGuardia({ action: "entrar", num: empleado.num, foto });
+      const { error: e1 } = await sb.auth.verifyOtp({ token_hash: r.token_hash, type: r.type || "magiclink" });
+      if (e1) throw new Error("No se pudo iniciar la sesión. Intenta de nuevo.");
+      const { data: u } = await sb.auth.getUser();
+      const { data: perfil } = await sb.from("perfiles").select("*").eq("id", u.user.id).maybeSingle();
+      if (!perfil) throw new Error("No se encontró tu perfil. Contacta a Capacitación.");
+      apagarCamara();
+      await iniciarSesion(perfilAUsuario(perfil), { nombre: empleado.nombre, fotoAcceso: foto, accesoEn: new Date().toISOString() });
+    } catch (e) {
+      error(e.message || "No se pudo entrar.");
+    } finally {
+      btn.disabled = false; btn.textContent = "Entrar";
+    }
+  }
+  function reiniciar() {
+    apagarCamara(); empleado = null; foto = null;
+    $("empNum").value = ""; $("empPaso").classList.add("hidden");
+    $("loginGuardia").classList.remove("hidden"); $("loginStaff").classList.add("hidden");
+  }
+  $("btnEmp").addEventListener("click", registrar);
+  $("empNum").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.stopPropagation(); registrar(); } });
+  $("btnCamOn").addEventListener("click", encenderCamara);
+  $("btnFoto").addEventListener("click", tomarFoto);
+  $("btnRepetir").addEventListener("click", () => { foto = null; $("empImg").removeAttribute("src"); mostrar("inicio"); aviso(""); $("lblSubir").classList.add("hidden"); });
+  $("btnEntrar").addEventListener("click", entrar);
+  $("empCamara").addEventListener("change", (e) => { fotoDeArchivo(e.target.files[0]); e.target.value = ""; });
+  $("lnkStaff").addEventListener("click", () => { reiniciar(); $("loginGuardia").classList.add("hidden"); $("loginStaff").classList.remove("hidden"); $("inputUser").focus(); });
+  $("lnkGuardia").addEventListener("click", () => { reiniciar(); $("empNum").focus(); });
+  return { reiniciar };
+})();
 
 // ── Catálogo ───────────────────────────────────────────────
 function refreshCatalog(){
@@ -244,12 +311,202 @@ function refreshCatalog(){
       if(bar)bar.style.width=pct+"%";
       if(txt)txt.textContent=pct+"% — Reintentar";
     }else{
+      // Sin intentos de este usuario: la tarjeta regresa a "Sin iniciar"
       card.dataset.status="new";
       if(bar)bar.style.width="0%";
       if(txt)txt.textContent="Sin iniciar";
     }
   });
 }
+
+// ── Visor de imágenes ──────────────────────────────────────
+function openLightbox(src){
+  let lb=document.getElementById("lightbox");
+  if(!lb){
+    lb=document.createElement("div");lb.id="lightbox";lb.className="lightbox";
+    lb.innerHTML='<img alt="Lámina ampliada"/><button class="lightbox__close" aria-label="Cerrar">✕</button>';
+    lb.addEventListener("click",()=>lb.classList.remove("lightbox--open"));
+    document.body.appendChild(lb);
+  }
+  lb.querySelector("img").src=src;lb.classList.add("lightbox--open");
+}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")document.getElementById("lightbox")?.classList.remove("lightbox--open");});
+
+// ── Visor de temas tipo presentación ───────────────────────
+let slideState={slides:[],i:0,opts:{}};
+function buildSlides(key){
+  const c=COURSE_CONTENT[key];const out=[];
+  c.modules.forEach((m,mi)=>{
+    if(m.video){out.push({mi,ii:0,parts:1,src:null,video:m.video,title:m.title,items:m.items});return;}
+    const imgs=m.imgs?.length?m.imgs:[null];
+    imgs.forEach((src,ii)=>out.push({mi,ii,parts:imgs.length,src,title:m.title,items:m.items}));
+  });
+  return out;
+}
+function ensureSlideViewer(){
+  let v=document.getElementById("slideViewer");if(v)return v;
+  v=document.createElement("div");v.id="slideViewer";v.className="slideViewer";
+  v.innerHTML=`
+    <header class="slideViewer__top">
+      <div class="slideViewer__title" id="svTitle"></div>
+      <div class="slideViewer__count" id="svCount"></div>
+    </header>
+    <div class="slideViewer__stage">
+      <div class="slideViewer__media"><img id="svImg" alt=""/></div>
+      <div class="slideViewer__video hidden" id="svVideoWrap">
+        <video id="svVideo" playsinline controls preload="metadata" controlsList="nodownload noplaybackrate nofullscreen" disablePictureInPicture></video>
+        <div class="vq hidden" id="svPregunta" role="dialog" aria-live="polite"></div>
+      </div>
+      <p class="slideViewer__hint">Gira tu celular o toca la lámina para verla en grande</p>
+      <ul class="slideViewer__list" id="svList"></ul>
+    </div>
+    <footer class="slideViewer__nav">
+      <button class="svBtn svBtn--navy" id="svPrev"><svg viewBox="0 0 24 24"><path d="M19 11H7.8l4.6-4.6L11 5l-7 7 7 7 1.4-1.4L7.8 13H19z"/></svg><span>Atrás</span></button>
+      <button class="svBtn svBtn--home" id="svHome" aria-label="Volver al contenido del curso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4z"/></svg></button>
+      <button class="svBtn svBtn--navy" id="svNext"><span>Siguiente</span><svg viewBox="0 0 24 24"><path d="M5 11h11.2l-4.6-4.6L13 5l7 7-7 7-1.4-1.4 4.6-4.6H5z"/></svg></button>
+    </footer>`;
+  document.body.appendChild(v);
+  v.querySelector("#svPrev").addEventListener("click",()=>goSlide(-1));
+  v.querySelector("#svNext").addEventListener("click",()=>{
+    if(!VIDEO.puedeAvanzar()){toast("Termina el video para continuar");return;}
+    if(slideState.i>=slideState.slides.length-1){
+      closeSlides();
+      if(slideState.opts.alTerminar)slideState.opts.alTerminar();else startQuiz();
+    }else goSlide(1);
+  });
+  v.querySelector("#svHome").addEventListener("click",closeSlides);
+  v.querySelector("#svImg").addEventListener("click",e=>openLightbox(e.target.src));
+  let x0=null;
+  v.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;},{passive:true});
+  v.addEventListener("touchend",e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;
+    if(Math.abs(dx)>60)goSlide(dx<0?1:-1);});
+  return v;
+}
+// ── Temas en video: preguntas en minutos definidos y sin adelantar ──
+const VIDEO = (() => {
+  let cfg = null, capacitador = false, maxVisto = 0, hechas = new Set(), terminado = true, abierta = null, corrigiendo = false;
+  const v = () => document.getElementById("svVideo");
+  const caja = () => document.getElementById("svPregunta");
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  function cargar(video, modoCapacitador) {
+    cfg = video; capacitador = modoCapacitador; maxVisto = 0; hechas = new Set(); terminado = false; abierta = null;
+    const el = v();
+    el.pause();
+    el.querySelectorAll("track,source").forEach((t) => t.remove());
+    el.removeAttribute("src");
+    // MP4 primero (Chrome, Safari, celulares); WebM como respaldo
+    [[video.src, "video/mp4"], [video.webm, "video/webm"]].forEach(([url, tipo]) => {
+      if (!url) return;
+      const so = document.createElement("source"); so.src = url; so.type = tipo; el.appendChild(so);
+    });
+    if (video.poster) el.poster = video.poster; else el.removeAttribute("poster");
+    if (video.vtt) {
+      const tr = document.createElement("track");
+      Object.assign(tr, { kind: "subtitles", srclang: "es", label: "Español", src: video.vtt, default: true });
+      el.appendChild(tr);
+    }
+    el.load();
+    caja().classList.add("hidden");
+  }
+  function salir() { const el = v(); if (el) el.pause(); if (caja()) caja().classList.add("hidden"); cfg = null; terminado = true; }
+  function puedeAvanzar() { return !cfg || capacitador || terminado; }
+  function pendiente(t) { return (cfg?.preguntas || []).findIndex((p, i) => !hechas.has(i) && t >= p.t); }
+  function mostrar(i) {
+    const p = cfg.preguntas[i]; abierta = i; v().pause();
+    caja().innerHTML = `<div class="vq__card"><div class="vq__tag">Pregunta</div><div class="vq__q">${esc(p.q)}</div>
+      <div class="vq__opts">${p.opts.map((o, k) => `<button class="quizOption" data-vq="${k}">${esc(o)}</button>`).join("")}</div>
+      <div class="vq__fb hidden"></div><button class="btnPrimaryWide vq__seguir hidden">Continuar el video ▶</button></div>`;
+    caja().classList.remove("hidden");
+  }
+  function responder(k) {
+    const p = cfg.preguntas[abierta]; const bien = k === p.ans;
+    caja().querySelectorAll("[data-vq]").forEach((b, i) => {
+      b.disabled = true;
+      if (i === p.ans) b.classList.add("quizOption--correct"); else if (i === k) b.classList.add("quizOption--wrong");
+    });
+    const fb = caja().querySelector(".vq__fb");
+    fb.className = "vq__fb quizFeedback " + (bien ? "quizFeedback--ok" : "quizFeedback--no");
+    fb.innerHTML = `<div class="quizFeedback__titulo">${bien ? "✅ ¡Correcto!" : "❌ Incorrecto"}</div>` +
+      (bien ? "" : `<div class="quizFeedback__correcta">La respuesta correcta es: <b>${esc(p.opts[p.ans])}</b></div>`) +
+      (p.exp ? `<div class="quizFeedback__exp">${esc(p.exp)}</div>` : "");
+    caja().querySelector(".vq__seguir").classList.remove("hidden");
+  }
+  function seguir() { hechas.add(abierta); abierta = null; caja().classList.add("hidden"); v().play().catch(() => {}); }
+  function enlazar() {
+    const el = v(); if (!el || el.dataset.enlazado) return; el.dataset.enlazado = "1";
+    el.addEventListener("timeupdate", () => {
+      if (!cfg) return;
+      if (!el.seeking && el.currentTime > maxVisto && el.currentTime - maxVisto < 2) maxVisto = el.currentTime;
+      const i = pendiente(el.currentTime);
+      if (i >= 0 && abierta === null) mostrar(i);
+    });
+    el.addEventListener("seeking", () => {
+      if (!cfg || capacitador || corrigiendo) return;
+      if (el.currentTime > maxVisto + 0.75) {
+        corrigiendo = true; el.currentTime = maxVisto; corrigiendo = false;
+        toast("Solo puedes regresar a partes que ya viste");
+      }
+    });
+    el.addEventListener("play", () => { if (abierta !== null) el.pause(); });
+    el.addEventListener("ended", () => {
+      if (!cfg) return;
+      const i = pendiente(el.duration + 1);
+      if (i >= 0) { mostrar(i); return; }
+      terminado = true;
+      toast("Video completado. Ya puedes continuar.");
+    });
+    caja().addEventListener("click", (e) => {
+      const b = e.target.closest("[data-vq]"); if (b) return responder(Number(b.dataset.vq));
+      if (e.target.closest(".vq__seguir")) {
+        seguir();
+        if (v().ended) { const i = pendiente(v().duration + 1); if (i >= 0) mostrar(i); else { terminado = true; toast("Video completado. Ya puedes continuar."); } }
+      }
+    });
+  }
+  return { cargar: (a, b) => { enlazar(); cargar(a, b); }, salir, puedeAvanzar };
+})();
+
+function openSlides(key,moduleIdx,opts={}){
+  slideState.opts=opts;
+  const v=ensureSlideViewer();
+  slideState.slides=buildSlides(key);
+  slideState.i=Math.max(0,slideState.slides.findIndex(s=>s.mi===moduleIdx));
+  renderSlide();v.classList.add("slideViewer--open");document.body.style.overflow="hidden";
+}
+function closeSlides(){
+  if(typeof VIDEO!=="undefined")VIDEO.salir();
+  document.getElementById("slideViewer")?.classList.remove("slideViewer--open");document.body.style.overflow="";
+}
+function goSlide(d){
+  if(d>0&&!VIDEO.puedeAvanzar()){toast("Termina el video para continuar");return;}
+  const n=slideState.i+d;if(n<0||n>=slideState.slides.length)return;
+  VIDEO.salir();
+  slideState.i=n;renderSlide();
+}
+function renderSlide(){
+  const{slides,i}=slideState;const s=slides[i];const total=slides.length;
+  document.getElementById("svTitle").textContent=s.title;
+  document.getElementById("svCount").textContent=`${i+1} / ${total}`;
+  const img=document.getElementById("svImg");
+  img.parentElement.classList.toggle("hidden",!s.src);
+  document.getElementById("svVideoWrap").classList.toggle("hidden",!s.video);
+  document.querySelector(".slideViewer__hint")?.classList.toggle("ocultoVideo",!!s.video);
+  if(s.video)VIDEO.cargar(s.video,!!slideState.opts.modoCapacitador);
+  // La lámina ocupa toda la pantalla; el texto del tema queda como descripción accesible
+  if(s.src){img.src=s.src;img.alt=`${s.title}. ${s.items.join(" ")}`;}
+  const ul=document.getElementById("svList");ul.innerHTML="";
+  ul.classList.toggle("hidden",!!s.src||!!s.video);
+  if(!s.src&&!s.video)s.items.forEach(t=>{const li=document.createElement("li");li.textContent=t;ul.appendChild(li);});
+  document.getElementById("svPrev").disabled=i===0;
+  document.querySelector("#svNext span").textContent=i===total-1?(slideState.opts.textoFinal||"Evaluación"):"Siguiente";
+}
+document.addEventListener("keydown",e=>{
+  if(!document.getElementById("slideViewer")?.classList.contains("slideViewer--open"))return;
+  if(document.getElementById("lightbox")?.classList.contains("lightbox--open"))return;
+  if(e.key==="ArrowRight")goSlide(1);
+  else if(e.key==="ArrowLeft")goSlide(-1);
+  else if(e.key==="Escape")closeSlides();
+});
 
 // ── Detalle ────────────────────────────────────────────────
 function loadDetail(key){
@@ -262,21 +519,36 @@ function loadDetail(key){
   document.getElementById("detDesc").textContent=c.desc;
   const img=document.querySelector("#detAvatar img");if(img)img.src=c.img;
 
+  // Botón PDF
   const pdfBtn = document.getElementById("btnVerPDF");
-  if(c.pdf){ pdfBtn.href = c.pdf; pdfBtn.classList.remove("hidden"); }
-  else pdfBtn.classList.add("hidden");
-
+  if(c.pdf){
+    pdfBtn.href = c.pdf;
+    pdfBtn.classList.remove("hidden");
+  } else {
+    pdfBtn.classList.add("hidden");
+  }
   const container=document.getElementById("moduleList");
   container.innerHTML="";
   c.modules.forEach(mod=>{
     const wrap=document.createElement("div");wrap.className="accordion";
     const header=document.createElement("button");header.className="accordion__header";
-    header.innerHTML=`<div class="accordion__left"><span class="checkDot"><svg viewBox="0 0 24 24" class="icon"><path d="M9 16.2l-3.5-3.5L4 14.2l5 5 11-11-1.5-1.5L9 16.2z"/></svg></span><span>${mod.title}</span></div><span class="accordion__chevron">›</span>`;
+    header.innerHTML=`<div class="accordion__left"><span class="checkDot"><svg viewBox="0 0 24 24" class="icon"><path d="M9 16.2l-3.5-3.5L4 14.2l5 5 11-11-1.5-1.5L9 16.2z"/></svg></span><span>${mod.title}</span>${mod.video?'<span class="modTag">▶ Video</span>':''}</div><span class="accordion__chevron">›</span>`;
     const body=document.createElement("div");body.className="accordion__body";
+    const inner=document.createElement("div");inner.className="accordion__inner";
+    if(mod.imgs?.length){
+      inner.classList.add("accordion__inner--media");
+      const media=document.createElement("div");media.className="accordion__media";
+      mod.imgs.forEach(src=>{
+        const im=document.createElement("img");im.className="accordion__img";im.src=src;im.loading="lazy";im.alt=mod.title;
+        im.addEventListener("click",()=>openLightbox(src));media.appendChild(im);
+      });
+      inner.appendChild(media);
+    }
     const ul=document.createElement("ul");ul.className="accordion__list";
     mod.items.forEach(item=>{const li=document.createElement("li");li.textContent=item;ul.appendChild(li);});
-    body.appendChild(ul);
+    inner.appendChild(ul);body.appendChild(inner);
     header.addEventListener("click",()=>{
+      if(c.modules.some(m=>m.imgs?.length||m.video)){openSlides(key,c.modules.indexOf(mod));return;}
       const isOpen=wrap.classList.contains("accordion--open");
       document.querySelectorAll(".accordion").forEach(a=>a.classList.remove("accordion--open"));
       if(!isOpen)wrap.classList.add("accordion--open");
@@ -289,11 +561,18 @@ function loadDetail(key){
 }
 
 // ── Quiz ───────────────────────────────────────────────────
-function startQuiz(){
-  const key=currentCourseKey;
+function startQuiz(ctx=null){
+  if(!ctx||typeof ctx.alTerminar!=="function")ctx=null; // si viene de un clic, no es una sesión de capacitador
+  const key=ctx?.cursoKey||currentCourseKey;
   if(!key||!QUIZZES[key]){toast("Quiz no disponible");return;}
-  const pool=[...QUIZZES[key]].sort(()=>Math.random()-.5).slice(0,10);
-  quizState={questions:pool,current:0,answers:[],score:0,courseKey:key};
+  const barajar=arr=>{const r=[...arr];for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;};
+  // Mezcla preguntas y también el orden de las opciones, para que la respuesta no quede siempre en la misma posición
+  const pool=barajar(QUIZZES[key]).slice(0,10).map(q=>{
+    const orden=barajar(q.opts.map((_,i)=>i));
+    return{...q,opts:orden.map(i=>q.opts[i]),ans:orden.indexOf(q.ans)};
+  });
+  quizState={questions:pool,current:0,answers:[],score:0,courseKey:key,ctx};
+  const qBack=document.querySelector("#viewQuiz [data-back]");if(qBack)qBack.dataset.back=ctx?"trainer":"detail";
   navigate("quiz");renderQuestion();
 }
 function renderQuestion(){
@@ -308,6 +587,7 @@ function renderQuestion(){
     btn.addEventListener("click",()=>selectAnswer(i));optsEl.appendChild(btn);
   });
   document.getElementById("btnNextQ").classList.add("hidden");
+  document.getElementById("quizFeedback").classList.add("hidden");
 }
 function selectAnswer(idx){
   const q=quizState.questions[quizState.current];
@@ -316,50 +596,71 @@ function selectAnswer(idx){
     if(i===q.ans)btn.classList.add("quizOption--correct");
     else if(i===idx&&idx!==q.ans)btn.classList.add("quizOption--wrong");
   });
-  if(idx===q.ans)quizState.score++;
+  const bien=idx===q.ans;
+  if(bien)quizState.score++;
   quizState.answers.push(idx);
+  // Retroalimentación: siempre se explica por qué la respuesta correcta es la correcta
+  const fb=document.getElementById("quizFeedback");
+  const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  fb.className="quizFeedback "+(bien?"quizFeedback--ok":"quizFeedback--no");
+  fb.innerHTML=`<div class="quizFeedback__titulo">${bien?"✅ ¡Correcto!":"❌ Incorrecto"}</div>`+
+    (bien?"":`<div class="quizFeedback__correcta">La respuesta correcta es: <b>${esc(q.opts[q.ans])}</b></div>`)+
+    (q.exp?`<div class="quizFeedback__exp">${esc(q.exp)}</div>`:"");
+  if(window.innerWidth<1024)setTimeout(()=>fb.scrollIntoView({behavior:"smooth",block:"nearest"}),50);
   const btnNext=document.getElementById("btnNextQ");
   btnNext.classList.remove("hidden");
   btnNext.textContent=quizState.current+1<quizState.questions.length?"Siguiente →":"Ver resultados";
 }
-async function nextQuestion(){
+function nextQuestion(){
   quizState.current++;
-  if(quizState.current<quizState.questions.length)renderQuestion();else await showResult();
+  if(quizState.current<quizState.questions.length)renderQuestion();else showResult();
 }
-async function showResult(){
+function showResult(){
   const{score,questions,courseKey}=quizState;const total=questions.length;
   const passed=score>=Math.ceil(total*.8);const pct=Math.round((score/total)*100);
-  await saveProgress(courseKey,passed,score);
+  const ctx=quizState.ctx;
+  if(ctx)ctx.alTerminar(score,total,passed);else saveProgress(courseKey,passed,score);
   document.getElementById("resultIcon").textContent=passed?"🏅":"📋";
   document.getElementById("resultTitle").textContent=passed?"¡Aprobado!":"No aprobado";
   document.getElementById("resultScore").textContent=`${score} / ${total} correctas (${pct}%)`;
   document.getElementById("resultMsg").textContent=passed?"Felicidades. Has superado la evaluación con éxito.":"Necesitas mínimo 8 respuestas correctas (80%). Repasa el material e inténtalo de nuevo.";
   document.getElementById("resultBarFill").style.width=pct+"%";
   document.getElementById("resultBarFill").style.background=passed?"#22c55e":"#f97316";
-  document.getElementById("btnRetry").style.display=passed?"none":"block";
+  document.getElementById("btnRetry").style.display=(passed||ctx)?"none":"block";
+  const btnBack=document.querySelector("#viewResult .btnSecondaryWide");
+  btnBack.dataset.back=ctx?"trainer":"catalog";
+  btnBack.textContent=ctx?"← Volver a la sesión":"← Volver al catálogo";
+  if(ctx)document.getElementById("resultMsg").textContent=`${ctx.nombre}: ${passed?"aprobado":"no aprobado"}. Calificación registrada en la sesión.`;
   navigate("result");refreshCatalog();
 }
 
 // ══════════════════════════════════════════════════════════
 // ADMIN
 // ══════════════════════════════════════════════════════════
-function renderAdmin(){
+async function renderAdmin(){
+  // Datos frescos de Supabase cada vez que se abre el panel
+  await Promise.all([cargarUsuarios(), cargarProgresoTodos(), EMPLEADOS.cargar()]);
   renderAdminDashboard();
   renderAdminUsers();
   renderAdminCourses();
   renderAdminEvals();
+  renderAdminEmpleados();
 }
 
-async function renderAdminDashboard(){
-  const keys=Object.keys(COURSE_CONTENT);
-  const { data: perfiles } = await sb.from("perfiles").select("*").neq("rol","admin");
-  const { data: progresoAll } = await sb.from("progreso").select("*");
-  const allUsers = perfiles||[];
-  const progRows = progresoAll||[];
+function getAdminProgress(username){
+  return PROGRESO_TODOS[username] || {};
+}
 
-  const totalEvals = progRows.length;
-  const totalPassed = progRows.filter(r=>r.passed).length;
-  const scores = progRows.map(r=>r.score);
+function renderAdminDashboard(){
+  const keys=Object.keys(COURSE_CONTENT);
+  const allUsers=USUARIOS.filter(u=>u.role!=="admin"&&u.status==="activo");
+  let totalEvals=0,totalPassed=0,scores=[];
+  allUsers.forEach(u=>{
+    const prog=getAdminProgress(u.user);
+    keys.forEach(k=>{
+      if(prog[k]){totalEvals++;if(prog[k].passed)totalPassed++;scores.push(prog[k].score);}
+    });
+  });
   const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length*10)/10:0;
   const passRate=totalEvals?Math.round((totalPassed/totalEvals)*100):0;
 
@@ -375,8 +676,9 @@ async function renderAdminDashboard(){
   let html="";
   keys.forEach(k=>{
     const c=COURSE_CONTENT[k];
-    const passed=progRows.filter(r=>r.curso_key===k && r.passed).length;
-    const pct= allUsers.length? Math.round((passed/allUsers.length)*100):0;
+    let passed=0;
+    allUsers.forEach(u=>{const p=getAdminProgress(u.user);if(p[k]?.passed)passed++;});
+    const pct=Math.round((passed/(allUsers.length||1))*100);
     html+=`<div class="courseStatRow">
       <div class="courseStatName">${c.title}</div>
       <div class="courseStatBar"><div class="courseStatFill" style="width:${pct}%"></div></div>
@@ -386,35 +688,31 @@ async function renderAdminDashboard(){
   document.getElementById("adminCourseStats").innerHTML=html;
 }
 
-// ── Usuarios ────────────────────────────────────────────────
-async function renderAdminUsers(){
-  const keys = Object.keys(COURSE_CONTENT);
-  const { data: users, error } = await sb.from("perfiles").select("*").order("created_at");
-  if(error){ document.getElementById("adminUserTable").innerHTML = `<div class="emptyState">Error al cargar usuarios: ${error.message}</div>`; return; }
-  usersCache = users||[];
-  guardiasCache = usersCache.filter(u=>u.rol==="guardia");
+// ── Usuarios — Supabase (alta, edición y baja por Edge Function) ──
+const RUTA_ROL = { guardia:"Guardia", supervisor:"Supervisor", maestro:"Capacitador", admin:"Admin" };
 
-  const { data: progresoAll } = await sb.from("progreso").select("*");
-  const progRows = progresoAll||[];
+function renderAdminUsers(){
+  const keys = Object.keys(COURSE_CONTENT);
+  const users = [...getUsersDB()].sort((a,b)=>((a.role==="guardia")-(b.role==="guardia"))||a.nombre.localeCompare(b.nombre,"es"));
+  const gridCols = `160px 100px 90px 80px repeat(${keys.length},80px) 90px`;
 
   let html = `<div class="userTable">
-    <div class="userTable__head">
-      <div>Nombre</div><div>No. Empleado</div><div>Rol</div><div>Estado</div>
-      ${keys.map(k=>`<div>${COURSE_CONTENT[k].badge.replace("Certificación ","").replace("Seguridad Patrimonial","Patrimonial")}</div>`).join("")}
+    <div class="userTable__head" style="grid-template-columns:${gridCols}">
+      <div>Nombre</div><div>Usuario</div><div>Rol</div><div>Estado</div>
+      ${keys.map(k=>`<div>${COURSE_CONTENT[k].badge.replace("Certificación ","").replace("Seguridad Patrimonial","Patrimonial").replace("SafeR NextGen","NextGen").replace("Operación en campo","Rondines").replace("Seguridad e Higiene","EHS").replace("Prevención de ilícitos","PLD")}</div>`).join("")}
       <div>Acciones</div>
     </div>`;
 
-  usersCache.forEach(u => {
-    const prog = {};
-    progRows.filter(r=>r.guardia_id===u.id).forEach(r=>{ prog[r.curso_key]={passed:r.passed, score:r.score}; });
-    html += `<div class="userTable__row ${u.estado==='inactivo'?'userTable__row--inactive':''}">
+  users.forEach(u => {
+    const prog = getAdminProgress(u.user);
+    html += `<div class="userTable__row ${u.status==='inactivo'?'userTable__row--inactive':''}" style="grid-template-columns:${gridCols}">
       <div class="userTable__name">
-        <span class="userAvatar ${u.estado==='inactivo'?'userAvatar--inactive':''}">${u.nombre.charAt(0)}</span>
+        <span class="userAvatar ${u.status==='inactivo'?'userAvatar--inactive':''}">${u.nombre.charAt(0)}</span>
         <span>${u.nombre}</span>
       </div>
-      <div style="font-size:12px;color:#6b7280">${u.numero_empleado}</div>
-      <div><span class="roleBadge roleBadge--${u.rol}">${u.rol}</span></div>
-      <div><span class="statusPill ${u.estado==='activo'?'statusPill--active':'statusPill--inactive'}">${u.estado}</span></div>
+      <div style="font-size:12px;color:#6b7280">${u.user}</div>
+      <div><span class="roleBadge roleBadge--${u.role}">${RUTA_ROL[u.role]||u.role}</span></div>
+      <div><span class="statusPill ${u.status==='activo'?'statusPill--active':'statusPill--inactive'}">${u.status}</span></div>
       ${keys.map(k=>{
         const p = prog[k];
         if(!p) return `<div class="progCell progCell--none">—</div>`;
@@ -422,12 +720,13 @@ async function renderAdminUsers(){
       }).join("")}
       <div class="actionBtns">
         <button class="btnAction btnAction--edit" onclick="openUserModal('${u.id}')">✏️</button>
-        <button class="btnAction ${u.estado==='activo'?'btnAction--deact':'btnAction--act'}" onclick="toggleUserStatus('${u.id}')">${u.estado==='activo'?'🔒':'🔓'}</button>
-        ${u.rol!=='admin'?`<button class="btnAction btnAction--del" onclick="deleteUser('${u.id}')">🗑️</button>`:''}
+        <button class="btnAction ${u.status==='activo'?'btnAction--deact':'btnAction--act'}" onclick="toggleUserStatus('${u.id}')">${u.status==='activo'?'🔒':'🔓'}</button>
+        ${u.user!=='admin'?`<button class="btnAction btnAction--del" onclick="deleteUser('${u.id}')">🗑️</button>`:''}
       </div>
     </div>`;
   });
   html += "</div>";
+  if(!users.length) html = `<div class="emptyState">Aún no hay usuarios.</div>`;
   document.getElementById("adminUserTable").innerHTML = html;
 }
 
@@ -436,129 +735,228 @@ function openUserModal(id) {
   document.getElementById("modalUsuarioTitle").textContent = isNew ? "Nuevo usuario" : "Editar usuario";
   document.getElementById("editUserId").value = id || "";
   document.getElementById("modalUsuarioError").classList.add("hidden");
+  const userField = document.getElementById("editUserUser");
   const passField = document.getElementById("editUserPass");
   const passLabel = document.getElementById("editUserPassLabel");
-  const userField = document.getElementById("editUserUser");
 
   if (!isNew) {
-    const u = usersCache.find(x => x.id === id);
+    const u = getUsersDB().find(x => x.id === id);
     if (!u) return;
     document.getElementById("editUserNombre").value = u.nombre;
-    userField.value = u.numero_empleado;
-    userField.disabled = true;
-    document.getElementById("editUserRole").value = u.rol;
-    document.getElementById("editUserStatus").value = u.estado;
-    passField.value=""; passField.placeholder="Dejar en blanco para no cambiarla";
+    userField.value = u.user; userField.disabled = true;     // el usuario es su login: no se cambia
+    passField.value = ""; passField.placeholder = "Dejar en blanco para no cambiarla";
     passLabel.textContent = "Contraseña (opcional)";
+    document.getElementById("editUserRole").value = u.role;
+    document.getElementById("editUserStatus").value = u.status;
   } else {
     document.getElementById("editUserNombre").value = "";
     userField.value = ""; userField.disabled = false;
-    document.getElementById("editUserRole").value = "guardia";
-    document.getElementById("editUserStatus").value = "activo";
-    passField.value=""; passField.placeholder="Mínimo 6 caracteres";
+    passField.value = ""; passField.placeholder = "Mínimo 6 caracteres";
     passLabel.textContent = "Contraseña";
+    document.getElementById("editUserRole").value = "supervisor";
+    document.getElementById("editUserStatus").value = "activo";
   }
   document.getElementById("modalUsuario").classList.remove("hidden");
 }
 
-function closeUserModal() { document.getElementById("modalUsuario").classList.add("hidden"); }
+function closeUserModal() {
+  document.getElementById("modalUsuario").classList.add("hidden");
+}
 
 async function saveUserModal() {
   const id      = document.getElementById("editUserId").value;
   const nombre  = document.getElementById("editUserNombre").value.trim();
-  const numero_empleado = document.getElementById("editUserUser").value.trim().toLowerCase();
-  const password = document.getElementById("editUserPass").value.trim();
-  const rol     = document.getElementById("editUserRole").value;
-  const estado  = document.getElementById("editUserStatus").value;
+  const user    = document.getElementById("editUserUser").value.trim().toLowerCase();
+  const pass    = document.getElementById("editUserPass").value.trim();
+  const role    = document.getElementById("editUserRole").value;
+  const status  = document.getElementById("editUserStatus").value;
   const errEl   = document.getElementById("modalUsuarioError");
   const btn     = document.getElementById("btnSaveUser");
+  const fallo = (m) => { errEl.textContent = m; errEl.classList.remove("hidden"); };
 
-  if (!nombre || !numero_empleado || (!id && !password)) {
-    errEl.textContent = "Nombre, número de empleado y contraseña son obligatorios.";
-    errEl.classList.remove("hidden"); return;
-  }
-  if (password && password.length < 6) {
-    errEl.textContent = "La contraseña debe tener al menos 6 caracteres.";
-    errEl.classList.remove("hidden"); return;
-  }
+  if (!nombre || !user || (!id && !pass)) return fallo("Nombre, usuario y contraseña son obligatorios.");
+  if (!/^[a-z0-9._-]+$/.test(user)) return fallo("El usuario solo puede llevar letras, números, punto, guion y guion bajo.");
+  if (pass && pass.length < 6) return fallo("La contraseña debe tener al menos 6 caracteres.");
+  if (!id && getUsersDB().some(x => x.user === user)) return fallo("Ese usuario ya existe.");
 
-  btn.disabled=true; btn.textContent="Guardando…";
-  try{
-    if(id){
-      await callEdgeFunction("admin-users", { action:"update", id, nombre, rol, estado, password: password||undefined });
-    } else {
-      await callEdgeFunction("admin-users", { action:"create", numero_empleado, nombre, password, rol });
-    }
+  btn.disabled = true; btn.textContent = "Guardando…";
+  try {
+    if (id) await llamarAdminUsuarios({ action:"update", id, nombre, rol:role, estado:status, password: pass || undefined });
+    else    await llamarAdminUsuarios({ action:"create", numero_empleado:user, nombre, password:pass, rol:role });
     closeUserModal();
-    await renderAdminUsers();
+    await cargarUsuarios();
+    renderAdminUsers();
+    renderAdminDashboard();
     toast("✅ Usuario guardado correctamente");
-  }catch(e){
-    errEl.textContent = e.message;
-    errEl.classList.remove("hidden");
-  }finally{
-    btn.disabled=false; btn.textContent="Guardar";
+  } catch (e) {
+    fallo(e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = "Guardar";
   }
 }
 
-async function toggleUserStatus(id){
-  const u = usersCache.find(x=>x.id===id);
-  if(!u) return;
-  const nuevo = u.estado==="activo" ? "inactivo" : "activo";
+async function toggleUserStatus(id) {
+  const u = getUsersDB().find(x => x.id === id);
+  if (!u) return;
+  if (u.user === "admin") { toast("No puedes desactivar al administrador"); return; }
+  const nuevo = u.status === "activo" ? "inactivo" : "activo";
   const { error } = await sb.from("perfiles").update({ estado: nuevo }).eq("id", id);
-  if(error){ toast("Error al actualizar estado: "+error.message); return; }
-  await renderAdminUsers();
-  toast(nuevo==="activo" ? "Usuario activado" : "Usuario desactivado");
+  if (error) { toast("No se pudo actualizar: " + error.message); return; }
+  await cargarUsuarios();
+  renderAdminUsers();
+  renderAdminDashboard();
+  toast(`Usuario ${nuevo === "activo" ? "activado" : "desactivado"}`);
 }
 
-async function deleteUser(id){
-  if(!confirm("¿Eliminar este usuario? Esta acción no se puede deshacer.")) return;
-  try{
-    await callEdgeFunction("admin-users", { action:"delete", id });
-    await renderAdminUsers();
-    toast("Usuario eliminado");
-  }catch(e){ toast("Error: "+e.message); }
+async function deleteUser(id) {
+  const u = getUsersDB().find(x => x.id === id);
+  if (!u) return;
+  if (u.user === "admin") { toast("No puedes eliminar al administrador"); return; }
+  if (!confirm(`¿Eliminar a ${u.nombre}? Se borra también su avance. Esta acción no se puede deshacer.`)) return;
+  try {
+    await llamarAdminUsuarios({ action:"delete", id });
+    await Promise.all([cargarUsuarios(), cargarProgresoTodos()]);
+    renderAdminUsers();
+    renderAdminDashboard();
+    toast("🗑️ Usuario eliminado");
+  } catch (e) { toast("No se pudo eliminar: " + e.message); }
 }
 
-// ── Evaluaciones (tab admin) ─────────────────────────────────
-async function renderAdminEvals(){
-  const { data: rows, error } = await sb.from("progreso")
-    .select("*, perfiles!progreso_guardia_id_fkey(nombre,numero_empleado)")
-    .order("fecha", { ascending:false });
-  const cont=document.getElementById("adminEvalTable");
-  if(error){ cont.innerHTML=`<div class="emptyState">Error al cargar evaluaciones.</div>`; return; }
-  if(!rows || !rows.length){ cont.innerHTML=`<div class="emptyState">Aún no hay evaluaciones registradas.</div>`; return; }
+document.getElementById("btnCancelUser").addEventListener("click", closeUserModal);
+document.getElementById("btnSaveUser").addEventListener("click", saveUserModal);
 
-  let html = `<div class="userTable">
-    <div class="userTable__head"><div>Guardia</div><div>Curso</div><div>Calif.</div><div>Estado</div><div>Fecha</div></div>`;
+// ── Empleados (lista provisional hasta conectar IntsegWeb) ──
+let EMP_ADMIN = [];
+let EMP_FILTRO = "";
+
+async function renderAdminEmpleados(){
+  const cont = document.getElementById("adminEmpleadosLista");
+  if (!cont) return;
+  const { data, error } = await sb.from("empleados").select("num,nombre,area,activo").order("nombre").limit(2000);
+  if (error) { cont.innerHTML = `<div class="emptyState">No se pudo cargar la lista: ${error.message}</div>`; return; }
+  EMP_ADMIN = data || [];
+  pintarEmpleados();
+}
+function pintarEmpleados(){
+  const cont = document.getElementById("adminEmpleadosLista");
+  const q = EMP_FILTRO.toLowerCase();
+  const activos = EMP_ADMIN.filter(e => e.activo).length;
+  document.getElementById("adminEmpleadosResumen").textContent = `${EMP_ADMIN.length} empleados registrados · ${activos} activos`;
+  const filas = EMP_ADMIN.filter(e => !q || e.nombre.toLowerCase().includes(q) || e.num.includes(q)).slice(0, 200);
+  if (!EMP_ADMIN.length) { cont.innerHTML = `<div class="emptyState">Aún no hay empleados. Pega la lista de arriba para cargarla.</div>`; return; }
+  cont.innerHTML = `<div class="userTable">
+    <div class="userTable__head" style="grid-template-columns:100px 1fr 160px 90px"><div>No. empleado</div><div>Nombre</div><div>Área</div><div>Estado</div></div>
+    ${filas.map(e => `<div class="userTable__row ${e.activo?"":"userTable__row--inactive"}" style="grid-template-columns:100px 1fr 160px 90px">
+      <div>${e.num}</div><div>${e.nombre}</div><div>${e.area||"—"}</div>
+      <div><span class="statusPill ${e.activo?"statusPill--active":"statusPill--inactive"}">${e.activo?"activo":"inactivo"}</span></div>
+    </div>`).join("")}
+  </div>${EMP_ADMIN.length > 200 ? `<div class="emptyState">Mostrando los primeros 200. Usa el buscador para ubicar a alguien.</div>` : ""}`;
+}
+
+// Importa líneas "numero,nombre,area" (también acepta tabulador o punto y coma, como al copiar de Excel)
+async function importarEmpleados(){
+  const txt = document.getElementById("empImportText").value;
+  const desactivar = document.getElementById("empImportDesactivar").checked;
+  const msg = document.getElementById("empImportMsg");
+  const btn = document.getElementById("btnEmpImportar");
+  const decir = (t, ok = false) => { msg.textContent = t; msg.className = "empImportMsg " + (ok ? "ok" : "mal"); };
+
+  const mapa = new Map(); const ignoradas = [];
+  txt.split(/\r?\n/).forEach((linea) => {
+    if (!linea.trim()) return;
+    const partes = linea.split(/[\t;,]/).map(s => s.trim());
+    const num = (partes[0] || "").replace(/^0+/, "");
+    if (!/^\d{1,10}$/.test(num) || !partes[1]) { ignoradas.push(linea); return; }
+    mapa.set(num, { num, nombre: partes[1], area: partes[2] || null, activo: true, actualizado: new Date().toISOString() });
+  });
+  const filas = [...mapa.values()];
+  if (!filas.length) return decir("No encontré filas válidas. Formato: número, nombre, área (una por línea).");
+
+  btn.disabled = true; btn.textContent = "Importando…";
+  try {
+    for (let i = 0; i < filas.length; i += 400) {
+      const { error } = await sb.from("empleados").upsert(filas.slice(i, i + 400), { onConflict: "num" });
+      if (error) throw new Error(error.message);
+    }
+    let bajas = 0;
+    if (desactivar) {
+      const enLista = new Set(filas.map(f => f.num));
+      const sobrantes = EMP_ADMIN.filter(e => e.activo && !enLista.has(e.num)).map(e => e.num);
+      for (let i = 0; i < sobrantes.length; i += 400) {
+        const { error } = await sb.from("empleados").update({ activo: false, actualizado: new Date().toISOString() }).in("num", sobrantes.slice(i, i + 400));
+        if (error) throw new Error(error.message);
+      }
+      bajas = sobrantes.length;
+    }
+    document.getElementById("empImportText").value = "";
+    await EMPLEADOS.cargar();
+    await renderAdminEmpleados();
+    decir(`Listo: ${filas.length} empleados cargados${bajas ? `, ${bajas} marcados como inactivos` : ""}${ignoradas.length ? `, ${ignoradas.length} líneas ignoradas` : ""}.`, true);
+  } catch (e) {
+    decir("No se pudo importar: " + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = "Importar lista";
+  }
+}
+document.getElementById("btnEmpImportar")?.addEventListener("click", importarEmpleados);
+document.getElementById("empBuscarAdmin")?.addEventListener("input", (e) => { EMP_FILTRO = e.target.value; pintarEmpleados(); });
+
+function renderAdminCourses(){
+  const keys=Object.keys(COURSE_CONTENT);
+  let html="";
+  keys.forEach(k=>{
+    const c=COURSE_CONTENT[k];
+    html+=`<div class="adminCourseCard">
+      <div class="adminCourseCard__img"><img src="${c.img}" alt="${c.title}"/></div>
+      <div class="adminCourseCard__body">
+        <div class="adminCourseCard__badge">${c.badge}</div>
+        <div class="adminCourseCard__title">${c.title}</div>
+        <div class="adminCourseCard__meta">👤 ${c.instructor} &nbsp;|&nbsp; ⏱ ${c.duration}</div>
+        <div class="adminCourseCard__desc">${c.desc}</div>
+      </div>
+      <div class="adminCourseCard__actions">
+        <button class="btnEdit" onclick="openEditModal('${k}')">✏️ Editar</button>
+        <button class="btnNavy" data-go="detail" data-course="${k}">Ver curso</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById("adminCourseList").innerHTML=html;
+}
+
+
+function renderAdminEvals(){
+  const keys=Object.keys(COURSE_CONTENT);
+  const users=getUsersDB().filter(u=>u.role!=="admin");
+  let rows=[];
+  users.forEach(u=>{
+    const prog=getAdminProgress(u.user);
+    keys.forEach(k=>{
+      if(prog[k]){
+        const fecha=prog[k].date?new Date(prog[k].date):null;
+        rows.push({nombre:u.nombre,curso:COURSE_CONTENT[k].title,score:prog[k].score,passed:prog[k].passed,fecha,date:fecha?fecha.toLocaleDateString("es-MX"):"—"});
+      }
+    });
+  });
+  rows.sort((a,b)=>(b.fecha||0)-(a.fecha||0));
+
+  if(!rows.length){document.getElementById("adminEvalTable").innerHTML=`<div class="emptyState">Aún no hay evaluaciones registradas.</div>`;return;}
+
+  let html=`<div class="evalTable">
+    <div class="evalTable__head"><div>Usuario</div><div>Curso</div><div>Puntaje</div><div>Estado</div><div>Fecha</div></div>`;
   rows.forEach(r=>{
-    const nombre = r.perfiles?.nombre || "—";
-    const cursoTitle = COURSE_CONTENT[r.curso_key]?.title || r.curso_key;
-    html+=`<div class="userTable__row">
-      <div>${nombre}</div>
-      <div>${cursoTitle}</div>
+    html+=`<div class="evalTable__row">
+      <div>${r.nombre}</div>
+      <div class="evalTable__curso">${r.curso}</div>
       <div><strong>${r.score}/10</strong></div>
       <div><span class="statusBadge ${r.passed?"statusBadge--pass":"statusBadge--fail"}">${r.passed?"Aprobado":"No aprobado"}</span></div>
-      <div>${new Date(r.fecha).toLocaleDateString()}</div>
+      <div>${r.date}</div>
     </div>`;
   });
   html+="</div>";
-  cont.innerHTML = html;
+  document.getElementById("adminEvalTable").innerHTML=html;
 }
 
-// ── Cursos (edición en memoria — fase 2 los mueve a la BD) ──
-function renderAdminCourses(){
-  const keys=Object.keys(COURSE_CONTENT);
-  document.getElementById("adminCourseList").innerHTML = keys.map(k=>{
-    const c=COURSE_CONTENT[k];
-    return `<div class="userTable__row" style="grid-template-columns:2fr 1fr 1fr auto">
-      <div><strong>${c.title}</strong><div style="font-size:12px;color:#6b7280">${c.badge}</div></div>
-      <div>${c.instructor}</div>
-      <div>${c.duration}</div>
-      <div class="actionBtns"><button class="btnAction btnAction--edit" onclick="openEditModal('${k}')">✏️</button></div>
-    </div>`;
-  }).join("");
-}
-
+// ── Editar curso ───────────────────────────────────────────
 function openEditModal(key){
   const c=COURSE_CONTENT[key];
   document.getElementById("editCourseKey").value=key;
@@ -580,7 +978,7 @@ function saveEditModal(){
   closeEditModal();
   renderAdminCourses();
   refreshCatalog();
-  toast("✅ Curso actualizado correctamente (solo en esta sesión — fase 2 lo guarda en la base de datos)");
+  toast("✅ Curso actualizado correctamente");
 }
 document.getElementById("btnCancelEdit").addEventListener("click", closeEditModal);
 document.getElementById("btnSaveEdit").addEventListener("click", saveEditModal);
@@ -594,184 +992,6 @@ document.querySelectorAll(".adminTab").forEach(tab=>{
     document.getElementById("atab-"+this.dataset.atab).classList.remove("hidden");
   });
 });
-
-// ══════════════════════════════════════════════════════════
-// EVIDENCIAS DE CAPACITACIÓN (Supervisor / Admin) — Supabase Storage + tabla
-// ══════════════════════════════════════════════════════════
-let evidSelectedGuardia=null;
-
-async function cargarGuardias(){
-  const { data } = await sb.from("perfiles").select("id,nombre,numero_empleado").eq("rol","guardia").order("nombre");
-  guardiasCache = data||[];
-  return guardiasCache;
-}
-
-function evidIcon(tipo){
-  return {Foto:"📷",Video:"🎥",PDF:"📄","Lista de asistencia":"📋"}[tipo]||"📁";
-}
-
-async function renderEvidencias(){
-  const users = await cargarGuardias();
-  const sel=document.getElementById("evidGuardiaSelect");
-  const prevVal=evidSelectedGuardia||sel.value;
-  sel.innerHTML = users.length
-    ? users.map(u=>`<option value="${u.id}">${u.nombre} (${u.numero_empleado})</option>`).join("")
-    : `<option value="">— No hay guardias registrados —</option>`;
-  if(prevVal && users.find(u=>u.id===prevVal)) sel.value=prevVal;
-  evidSelectedGuardia = sel.value;
-  await renderEvidHistorial();
-}
-
-async function renderEvidHistorial(){
-  const guardiaId=document.getElementById("evidGuardiaSelect").value;
-  evidSelectedGuardia=guardiaId;
-  const cont=document.getElementById("evidHistorial");
-  if(!guardiaId){ cont.innerHTML=`<div class="emptyState">No hay guardias registrados todavía.</div>`; return; }
-  cont.innerHTML = `<div class="emptyState">Cargando…</div>`;
-
-  const { data: all, error } = await sb.from("evidencias")
-    .select("*, autor:perfiles!evidencias_subido_por_fkey(nombre)")
-    .eq("guardia_id", guardiaId)
-    .order("fecha", { ascending:false });
-
-  if(error){ cont.innerHTML=`<div class="emptyState">Error al cargar evidencias: ${error.message}</div>`; return; }
-  if(!all || !all.length){ cont.innerHTML = `<div class="emptyState">Sin evidencias registradas para este elemento.</div>`; return; }
-
-  const isAdmin = currentUser?.rol==="admin";
-  cont.innerHTML = all.map(e=>`
-    <div class="evidCard">
-      <div class="evidCard__icon">${evidIcon(e.tipo_evidencia)}</div>
-      <div class="evidCard__body">
-        <div class="evidCard__title">${e.tipo_entrenamiento}</div>
-        <div class="evidCard__meta">${e.tipo_evidencia} · ${e.fecha} · subido por ${e.autor?.nombre||"—"}</div>
-        ${e.notas?`<div class="evidCard__notas">${e.notas}</div>`:""}
-      </div>
-      <div class="evidCard__actions">
-        <button class="btnAction" title="Descargar archivo" onclick="verEvidencia('${e.id}','${e.archivo_path}','${(e.archivo_nombre||'').replace(/'/g,"\\'")}')">⬇️</button>
-        ${isAdmin?`<button class="btnAction btnAction--del" title="Eliminar" onclick="eliminarEvidencia('${e.id}','${e.archivo_path}')">🗑️</button>`:""}
-      </div>
-    </div>`).join("");
-}
-
-async function verEvidencia(id, path, fileName){
-  const { data, error } = await sb.storage.from("evidencias").download(path);
-  if(error || !data){ toast("No se pudo descargar el archivo"); return; }
-  const url=URL.createObjectURL(data);
-  const a=document.createElement("a"); a.href=url; a.download=fileName||"evidencia";
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),4000);
-}
-
-async function eliminarEvidencia(id, path){
-  if(!confirm("¿Eliminar esta evidencia? Esta acción no se puede deshacer.")) return;
-  await sb.storage.from("evidencias").remove([path]);
-  const { error } = await sb.from("evidencias").delete().eq("id", id);
-  if(error){ toast("Error al eliminar: "+error.message); return; }
-  await renderEvidHistorial();
-  toast("Evidencia eliminada");
-}
-
-async function openEvidModal(){
-  const users = guardiasCache.length ? guardiasCache : await cargarGuardias();
-  if(!users.length){ toast("Primero registra al menos un guardia en Admin → Usuarios"); return; }
-  document.getElementById("evidModalError").classList.add("hidden");
-  document.getElementById("evidEntrenamiento").value="";
-  document.getElementById("evidTipo").value="Foto";
-  document.getElementById("evidFecha").value=new Date().toISOString().slice(0,10);
-  document.getElementById("evidNotas").value="";
-  document.getElementById("evidArchivo").value="";
-  const selModal=document.getElementById("evidModalGuardia");
-  selModal.innerHTML = users.map(u=>`<option value="${u.id}">${u.nombre} (${u.numero_empleado})</option>`).join("");
-  selModal.value = evidSelectedGuardia || users[0]?.id || "";
-  document.getElementById("modalEvidencia").classList.remove("hidden");
-}
-function closeEvidModal(){ document.getElementById("modalEvidencia").classList.add("hidden"); }
-
-async function saveEvidModal(){
-  const guardiaId=document.getElementById("evidModalGuardia").value;
-  const entrenamiento=document.getElementById("evidEntrenamiento").value.trim();
-  const tipo=document.getElementById("evidTipo").value;
-  const fecha=document.getElementById("evidFecha").value;
-  const notas=document.getElementById("evidNotas").value.trim();
-  const file=document.getElementById("evidArchivo").files[0];
-  const errEl=document.getElementById("evidModalError");
-  const btn=document.getElementById("btnSaveEvid");
-
-  if(!guardiaId||!entrenamiento||!fecha||!file){
-    errEl.textContent="Elemento, tipo de entrenamiento, fecha y archivo son obligatorios.";
-    errEl.classList.remove("hidden"); return;
-  }
-  if(file.size > 50*1024*1024){
-    errEl.textContent="El archivo no debe superar 50 MB.";
-    errEl.classList.remove("hidden"); return;
-  }
-
-  btn.disabled=true; btn.textContent="Guardando…";
-  const path = `${guardiaId}/${Date.now()}_${file.name}`.replace(/[^a-zA-Z0-9._/-]/g,"_");
-
-  const { error: upErr } = await sb.storage.from("evidencias").upload(path, file);
-  if(upErr){
-    btn.disabled=false; btn.textContent="Guardar evidencia";
-    errEl.textContent="No se pudo subir el archivo: "+upErr.message;
-    errEl.classList.remove("hidden"); return;
-  }
-
-  const { error: insErr } = await sb.from("evidencias").insert({
-    guardia_id: guardiaId,
-    subido_por: currentUser.id,
-    tipo_entrenamiento: entrenamiento,
-    tipo_evidencia: tipo,
-    fecha, notas,
-    archivo_path: path,
-    archivo_nombre: file.name
-  });
-  btn.disabled=false; btn.textContent="Guardar evidencia";
-
-  if(insErr){
-    await sb.storage.from("evidencias").remove([path]);
-    errEl.textContent="No se pudo registrar la evidencia: "+insErr.message;
-    errEl.classList.remove("hidden"); return;
-  }
-
-  closeEvidModal();
-  document.getElementById("evidGuardiaSelect").value=guardiaId;
-  await renderEvidHistorial();
-  toast("✅ Evidencia guardada correctamente");
-}
-
-async function descargarExpediente(){
-  const guardiaId=document.getElementById("evidGuardiaSelect").value;
-  const guardia = guardiasCache.find(g=>g.id===guardiaId);
-  const { data: evid, error } = await sb.from("evidencias")
-    .select("*, autor:perfiles!evidencias_subido_por_fkey(nombre)")
-    .eq("guardia_id", guardiaId);
-
-  if(error || !evid || !evid.length){ toast("Este elemento no tiene evidencias registradas"); return; }
-  if(typeof JSZip==="undefined"){ toast("No se pudo cargar el generador de ZIP. Revisa tu conexión."); return; }
-
-  toast("Generando expediente…");
-  const zip=new JSZip();
-  let manifest = `Expediente de capacitación — ${guardia?.nombre||guardiaId}\nGenerado: ${new Date().toLocaleString()}\n\n`;
-  for(const e of evid){
-    const { data: blob } = await sb.storage.from("evidencias").download(e.archivo_path);
-    const safeName = `${e.fecha}_${e.tipo_evidencia}_${e.archivo_nombre}`.replace(/[\\/:*?"<>|]/g,"_");
-    if(blob) zip.file(safeName, blob);
-    manifest += `- ${e.fecha} | ${e.tipo_evidencia} | ${e.tipo_entrenamiento} | subido por ${e.autor?.nombre||"—"}${e.notas?" | "+e.notas:""}\n`;
-  }
-  zip.file("expediente.txt", manifest);
-  const content = await zip.generateAsync({type:"blob"});
-  const url=URL.createObjectURL(content);
-  const a=document.createElement("a");
-  a.href=url; a.download=`Expediente_${(guardia?.numero_empleado||guardiaId)}.zip`;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),4000);
-}
-
-document.getElementById("evidGuardiaSelect")?.addEventListener("change", renderEvidHistorial);
-document.getElementById("btnNuevaEvidencia")?.addEventListener("click", openEvidModal);
-document.getElementById("btnCancelEvid")?.addEventListener("click", closeEvidModal);
-document.getElementById("btnSaveEvid")?.addEventListener("click", saveEvidModal);
-document.getElementById("btnDescargarExpediente")?.addEventListener("click", descargarExpediente);
 
 // ── Eventos generales ──────────────────────────────────────
 document.addEventListener("click",e=>{
@@ -788,20 +1008,17 @@ document.addEventListener("click",e=>{
     const dest=back.dataset.back;
     if(dest==="catalog"){refreshCatalog();navigate("catalog");}
     else if(dest==="detail")navigate("detail");
+    else if(dest==="trainer")TR.volver();
     else{refreshCatalog();navigate("catalog");}
     return;
   }
   if(e.target===document.getElementById("modalCurso")) closeEditModal();
-  if(e.target===document.getElementById("modalEvidencia")) closeEvidModal();
-  if(e.target===document.getElementById("modalUsuario")) closeUserModal();
 });
 document.getElementById("btnEval").addEventListener("click",startQuiz);
 document.getElementById("btnNextQ").addEventListener("click",nextQuestion);
 document.getElementById("btnRetry").addEventListener("click",()=>{loadDetail(currentCourseKey);navigate("detail");});
 document.getElementById("btnLogin").addEventListener("click",doLogin);
-document.addEventListener("keydown",e=>{if(e.key==="Enter"&&!document.getElementById("viewLogin").classList.contains("hidden"))doLogin();});
-document.getElementById("btnCancelUser")?.addEventListener("click", closeUserModal);
-document.getElementById("btnSaveUser")?.addEventListener("click", saveUserModal);
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.closest&&e.target.closest("#loginStaff"))doLogin();});
 document.querySelectorAll(".tab").forEach(tab=>{
   tab.addEventListener("click",function(){
     document.querySelectorAll(".tab").forEach(t=>t.classList.remove("tab--active"));
@@ -820,20 +1037,26 @@ document.getElementById("searchInput").addEventListener("input",function(){
   });
 });
 
-// ── Arranque: si ya había sesión activa (recargó la página), retómala ──
-(async function boot(){
-  const { data: sessionData } = await sb.auth.getSession();
-  if(sessionData?.session?.user){
-    const { data: perfil } = await sb.from("perfiles").select("*").eq("id", sessionData.session.user.id).single();
-    if(perfil && perfil.estado==="activo"){
-      currentUser = perfil;
-      await cargarProgresoUsuario();
-      refreshCatalog();
-      applyRoleVisibility();
-      if(perfil.rol==="admin"||perfil.rol==="maestro") return navigate("admin");
-      if(perfil.rol==="supervisor") return navigate("evidencias");
-      return navigate("catalog");
+
+
+
+// ── Arranque: retoma la sesión del personal si ya estaba abierta ──
+async function arranque(){
+  try{
+    const { data } = await sb.auth.getSession();
+    const user = data?.session?.user;
+    if(user){
+      const { data: perfil } = await sb.from("perfiles").select("*").eq("id", user.id).maybeSingle();
+      // Los guardias no conservan la sesión al recargar: se identifican de nuevo con número y foto
+      if(perfil && perfil.rol!=="guardia" && perfil.estado==="activo"){
+        await iniciarSesion(perfilAUsuario(perfil));
+        return;
+      }
+      await sb.auth.signOut();
     }
-  }
+  }catch(e){ console.error("arranque:", e); }
   navigate("login");
-})();
+}
+// Se espera a que carguen todos los scripts (capacitador.js, fichas.js, evidencias.js) antes de arrancar
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", arranque);
+else arranque();
