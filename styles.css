@@ -1,0 +1,328 @@
+:root{
+  --navy:#003d6b; --navy2:#002a4f;
+  --orange:#ff8c00;
+  --text:#1f2937; --muted:#6b7280;
+  --line:#e5e7eb; --bg:#f3f4f6;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#fff;color:var(--text);}
+.hidden{display:none!important;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(0,42,79,.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;white-space:nowrap;pointer-events:none;transition:opacity .3s;}
+.toast.hidden{opacity:0;}.toast:not(.hidden){opacity:1;}
+
+/* LOGIN */
+#viewLogin{min-height:100vh;background:#f5f6f8;display:flex;align-items:center;justify-content:center;padding:40px 16px;}
+.loginWrap{display:flex;flex-direction:column;align-items:center;width:100%;max-width:400px;}
+.loginLogo{margin-bottom:24px;}
+.loginLogoImg{width:90px;height:auto;display:block;}
+.loginCard{background:var(--navy);border-radius:20px;padding:28px 24px 32px;width:100%;box-shadow:0 8px 32px rgba(0,42,79,.2);}
+.loginCardTitle{color:#fff;font-size:18px;font-weight:800;text-align:center;margin-bottom:22px;}
+.loginLabel{display:block;color:#8aa0c0;font-size:13px;margin-bottom:6px;}
+.loginInput{width:100%;background:#fff;border:none;border-radius:10px;padding:13px 14px;font-size:14px;margin-bottom:18px;outline:none;color:var(--text);}
+.loginBtn{width:100%;background:#fff;color:var(--navy);border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;}
+.loginBtn:active{opacity:.85;}
+.loginError{background:rgba(220,38,38,.18);color:#fca5a5;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;text-align:center;}
+.loginFooter{margin-top:24px;font-size:12px;color:#aab0bc;text-align:center;}
+.loginFooter strong{color:var(--orange);}
+
+/* APP SHELL */
+.app-shell{min-height:100vh;display:flex;flex-direction:column;}
+.view{display:flex;flex-direction:column;flex:1;}
+
+/* SIDEBAR — oculto en móvil por defecto */
+.sidebar{display:none;}
+
+/* TOPBAR */
+.topbar{height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;flex-shrink:0;}
+.topbar--flat{height:62px;align-items:flex-end;padding-bottom:10px;border-bottom:none;}
+.topbar__left{display:flex;align-items:center;gap:10px;}
+.topbar__title{font-size:16px;font-weight:800;}
+.topbar__title--big{font-size:20px;}
+.brand__mini{width:28px;height:auto;object-fit:contain;}
+.iconBtn{width:36px;height:36px;border:0;background:transparent;display:grid;place-items:center;border-radius:10px;cursor:pointer;}
+.icon{width:18px;height:18px;fill:#111827;}
+
+/* PAGE */
+.page-content{flex:1;overflow-y:auto;padding:12px 16px 88px;}
+.page-content--admin{padding-bottom:88px;}
+
+/* SEARCH */
+.search{display:flex;align-items:center;gap:10px;background:#eef0f3;border-radius:12px;padding:10px 12px;}
+.search__icon{width:18px;height:18px;fill:#6b7280;flex-shrink:0;}
+.search__input{border:0;outline:0;background:transparent;width:100%;font-size:14px;color:#111827;}
+
+/* TABS */
+.tabs{margin-top:10px;display:flex;align-items:center;gap:10px;}
+.tab{border:0;background:#fff;font-weight:700;color:#6b7280;padding:8px 14px;border-radius:10px;cursor:pointer;font-size:13px;}
+.tab--active{background:var(--navy);color:#fff;}
+.tab+.tab::before{content:"";display:inline-block;width:1px;height:16px;background:#d1d5db;margin-right:10px;vertical-align:middle;}
+
+/* COURSE CARDS */
+.list{margin-top:12px;display:grid;gap:12px;}
+.courseCard{background:#fff;border-radius:16px;padding:12px;border:1px solid #eef0f3;box-shadow:0 4px 14px rgba(17,24,39,.06);}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#6b7280;background:#eef0f3;padding:5px 10px;border-radius:10px;margin-bottom:8px;}
+.courseCard__row{display:flex;align-items:center;gap:12px;}
+.thumb{width:60px;height:60px;border-radius:12px;overflow:hidden;background:#e5e7eb;flex-shrink:0;}
+.thumb img{width:100%;height:100%;object-fit:cover;}
+.courseCard__main{flex:1;min-width:0;}
+.courseCard__title{font-weight:800;font-size:14px;line-height:1.25;}
+.courseCard__sub{font-size:12px;color:#6b7280;margin-top:3px;}
+.btnNavy{border:0;background:var(--navy);color:#fff;font-weight:800;padding:9px 14px;border-radius:12px;font-size:12px;flex-shrink:0;cursor:pointer;transition:opacity .15s;white-space:nowrap;}
+.btnNavy:active{opacity:.8;}
+.progressRow{margin-top:6px;}
+.progressText{font-size:12px;color:#6b7280;margin-bottom:4px;}
+.progressBar{height:6px;background:#e5e7eb;border-radius:999px;overflow:hidden;}
+.progressBar__fill{height:100%;width:0%;background:#003d6b;transition:width .4s;}
+
+/* DETAIL */
+#viewDetail{min-height:100vh;display:flex;flex-direction:column;}
+.detailScroll{flex:1;overflow-y:auto;padding:12px 16px 16px;}
+.detailFooter{padding:12px 16px 20px;background:#fff;border-top:1px solid var(--line);flex-shrink:0;}
+.detailHeader{display:flex;gap:14px;margin-top:8px;}
+.detailAvatar{width:72px;height:72px;border-radius:14px;overflow:hidden;background:#e5e7eb;flex-shrink:0;}
+.detailAvatar img{width:100%;height:100%;object-fit:cover;}
+.detailInfo{flex:1;min-width:0;}
+.detailTitle{font-weight:900;font-size:17px;margin-bottom:8px;line-height:1.25;}
+.metaRow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;color:#6b7280;font-size:12px;}
+.metaItem{display:flex;align-items:center;gap:6px;}
+.metaDot{width:18px;height:18px;border-radius:999px;overflow:hidden;background:#e5e7eb;display:grid;place-items:center;flex-shrink:0;}
+.metaDot img{width:100%;height:100%;object-fit:cover;}
+.metaIcon{width:15px;height:15px;fill:#6b7280;}
+.detailDesc{margin:14px 0 12px;color:#6b7280;font-size:13px;line-height:1.6;}
+.sectionTitle{font-weight:900;font-size:14px;margin:12px 0 8px;}
+.btnPrimaryWide{width:100%;border:0;background:linear-gradient(180deg,var(--navy),var(--navy2));color:#fff;font-weight:900;padding:14px;border-radius:14px;font-size:15px;cursor:pointer;}
+
+/* ACORDEÓN */
+.accordion{background:#fff;border:1px solid #eef0f3;border-radius:12px;margin-bottom:8px;overflow:hidden;}
+.accordion--open{box-shadow:0 4px 16px rgba(0,61,107,.1);border-color:#b8ccdf;}
+.accordion__header{width:100%;display:flex;align-items:center;justify-content:space-between;padding:13px 14px;background:transparent;border:none;cursor:pointer;text-align:left;gap:10px;}
+.accordion__header:hover{background:#f9fafb;}
+.accordion__left{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:#1f2937;line-height:1.4;}
+.accordion__chevron{color:#9ca3af;font-size:20px;flex-shrink:0;transition:transform .2s;}
+.accordion--open .accordion__chevron{transform:rotate(90deg);}
+.accordion__body{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+.accordion--open .accordion__body{max-height:800px;}
+.accordion__list{list-style:none;padding:0 14px 14px;margin:0;border-top:1px solid #eef0f3;}
+.accordion__list li{font-size:13px;color:#374151;line-height:1.65;padding:8px 0;border-bottom:1px solid #f3f4f6;}
+.accordion__list li:last-child{border-bottom:none;}
+.accordion__list li::before{content:"▸ ";color:var(--navy);font-size:11px;}
+.checkDot{width:22px;height:22px;border-radius:999px;background:var(--navy);display:grid;place-items:center;flex-shrink:0;}
+.checkDot .icon{width:14px;height:14px;fill:#fff;}
+
+/* QUIZ */
+#viewQuiz{min-height:100vh;display:flex;flex-direction:column;}
+.quizWrap{flex:1;display:flex;flex-direction:column;padding:16px 16px 24px;gap:16px;}
+.quizHeader{background:#fff;border-radius:14px;padding:14px 16px;border:1px solid #eef0f3;}
+.quizCourseName{font-size:12px;color:#6b7280;margin-bottom:4px;}
+.quizMeta{font-size:13px;font-weight:700;color:#1f2937;margin-bottom:8px;}
+.quizBar{height:6px;background:#e5e7eb;border-radius:999px;overflow:hidden;}
+.quizBar__fill{height:100%;background:var(--navy);border-radius:999px;transition:width .3s ease;}
+.quizBody{flex:1;display:flex;flex-direction:column;gap:12px;}
+.quizQ{background:#fff;border-radius:14px;padding:18px 16px;border:1px solid #eef0f3;font-size:15px;font-weight:700;line-height:1.5;}
+.quizOptions{display:flex;flex-direction:column;gap:10px;}
+.quizOption{width:100%;text-align:left;background:#fff;border:2px solid #e5e7eb;border-radius:12px;padding:13px 16px;font-size:14px;cursor:pointer;transition:border-color .15s,background .15s;line-height:1.4;}
+.quizOption:hover:not(:disabled){border-color:var(--navy);background:#f0f4ff;}
+.quizOption--correct{border-color:#22c55e!important;background:#dcfce7!important;color:#15803d;font-weight:700;}
+.quizOption--wrong{border-color:#ef4444!important;background:#fee2e2!important;color:#b91c1c;}
+.quizOption:disabled{cursor:default;}
+.quizFooter{padding-top:4px;}
+
+/* RESULTADO */
+#viewResult{min-height:100vh;display:flex;flex-direction:column;}
+.resultWrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 24px 40px;gap:14px;text-align:center;}
+.resultIcon{font-size:56px;}
+.resultTitle{font-size:26px;font-weight:900;}
+.resultScore{font-size:16px;color:#6b7280;}
+.resultBarWrap{width:100%;max-width:320px;}
+.resultBar{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden;}
+.resultBarFill{height:100%;border-radius:999px;transition:width .5s ease;}
+.resultMsg{font-size:14px;color:#6b7280;line-height:1.6;max-width:320px;}
+.btnSecondaryWide{width:100%;border:2px solid var(--navy);background:#fff;color:var(--navy);font-weight:800;padding:13px;border-radius:14px;font-size:15px;cursor:pointer;margin-top:4px;}
+
+/* ADMIN */
+.subText{color:#6b7280;font-size:13px;margin-bottom:14px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.tile{border:0;border-radius:14px;padding:14px 12px;display:flex;gap:10px;align-items:center;background:#eef0f3;cursor:pointer;transition:filter .15s;}
+.tile:hover{filter:brightness(.96);}
+.tileIcon{font-size:20px;}.tileText{font-weight:800;font-size:13px;color:#111827;text-align:left;}
+.tile--orange{background:#ffe7cf;}.tile--blue{background:#dbeafe;}.tile--green{background:#dcfce7;}.tile--teal{background:#d1fae5;}
+.statsRow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 16px;}
+.stat{background:#fff;border:1px solid #eef0f3;border-radius:12px;padding:12px 6px;text-align:center;}
+.statN{font-weight:900;font-size:18px;}.statN--orange{color:var(--orange);}.statL{font-size:11px;color:#6b7280;margin-top:2px;}
+.adminList{display:grid;gap:10px;}
+.adminCard{background:#fff;border:1px solid #eef0f3;border-radius:16px;padding:12px;display:flex;justify-content:space-between;gap:10px;align-items:center;}
+.adminCard__left{flex:1;min-width:0;}
+.adminBadge{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#6b7280;background:#eef0f3;padding:5px 10px;border-radius:10px;margin-bottom:8px;}
+.adminRow{display:flex;gap:10px;align-items:center;}
+.thumb.sm{width:48px;height:48px;border-radius:12px;}
+.adminMain{min-width:0;}
+.adminTitle{font-weight:800;font-size:13px;line-height:1.3;}
+.adminMeta{font-size:12px;color:#6b7280;margin-top:2px;}
+
+/* BOTTOM NAV */
+.bottomNav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:8px 0 14px;z-index:50;}
+.navItem{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;color:#6b7280;font-size:11px;cursor:pointer;}
+.navIcon{width:22px;height:22px;fill:#6b7280;}
+.navItem--active{color:var(--navy);font-weight:800;}
+.navItem--active .navIcon{fill:var(--navy);}
+
+/* DESKTOP */
+@media(min-width:768px){
+  body{background:var(--bg);}
+  #viewLogin{background:linear-gradient(135deg,#003d6b 0%,#005a9e 100%);}
+  .loginWrap{max-width:440px;}.loginLogoImg{width:110px;}
+  .sidebar{display:flex!important;flex-direction:column;width:220px;min-height:100vh;background:var(--navy);position:fixed;top:0;left:0;bottom:0;padding:28px 0 24px;z-index:100;flex-shrink:0;}
+  .sidebar__logo{display:flex;align-items:center;gap:10px;padding:0 20px 28px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:16px;}
+  .sidebar__logo img{width:36px;height:auto;}
+  .sidebar__logo span{color:#fff;font-size:15px;font-weight:800;line-height:1.2;}
+  .sidebar__nav{flex:1;display:flex;flex-direction:column;gap:2px;padding:0 10px;}
+  .sidebar__item{display:flex;align-items:center;gap:12px;color:rgba(255,255,255,0.6);font-size:14px;font-weight:600;padding:10px 12px;border-radius:10px;cursor:pointer;border:0;background:transparent;width:100%;text-align:left;transition:background .15s,color .15s;}
+  .sidebar__item:hover{background:rgba(255,255,255,0.08);color:#fff;}
+  .sidebar__item.active{background:rgba(255,255,255,0.12);color:#fff;}
+  .sidebar__item svg{width:18px;height:18px;fill:currentColor;flex-shrink:0;}
+  .sidebar__footer{padding:16px 20px 0;border-top:1px solid rgba(255,255,255,0.08);margin-top:auto;}
+  .sidebar__logout{display:flex;align-items:center;gap:10px;color:rgba(255,255,255,0.5);font-size:13px;cursor:pointer;background:transparent;border:0;padding:8px 0;width:100%;transition:color .15s;}
+  .sidebar__logout:hover{color:#fff;}
+  .sidebar__logout svg{width:16px;height:16px;fill:currentColor;}
+  .app-shell{margin-left:220px;min-height:100vh;background:var(--bg);}
+  .topbar{background:#fff;height:60px;padding:0 28px;}
+  .topbar__title{font-size:18px;}.topbar__title--big{font-size:22px;}
+  .brand__mini{display:none;}
+  .page-content{padding:24px 28px 40px;max-width:900px;}
+  .page-content--admin{padding:24px 28px 40px;max-width:1000px;}
+  .list{grid-template-columns:1fr 1fr;gap:16px;}
+  .thumb{width:72px;height:72px;}.courseCard__title{font-size:15px;}
+  #viewDetail .detailScroll{max-width:720px;padding:24px 28px;}
+  #viewDetail .detailFooter{padding:16px 28px 24px;max-width:720px;}
+  .detailAvatar{width:90px;height:90px;border-radius:16px;}.detailTitle{font-size:20px;}
+  .grid2{grid-template-columns:repeat(4,1fr);gap:12px;}
+  .statsRow{grid-template-columns:repeat(4,1fr);}
+  .adminList{grid-template-columns:1fr 1fr;gap:12px;}
+  .bottomNav{display:none!important;}
+  .quizWrap{max-width:640px;margin:0 auto;padding:28px 0 40px;}
+  .resultWrap{max-width:480px;margin:0 auto;}
+  .accordion__left{font-size:14px;}
+}
+
+/* ══════════════════════════════════════════════════
+   ADMIN — Tabs
+══════════════════════════════════════════════════ */
+.adminTabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.adminTab{border:0;background:#eef0f3;color:#6b7280;font-weight:700;font-size:13px;padding:9px 14px;border-radius:10px;cursor:pointer;transition:background .15s,color .15s;}
+.adminTab--active{background:var(--navy);color:#fff;}
+.adminTabContent{animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── Dashboard stats ── */
+.statsGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.statCard{background:#fff;border:1px solid #eef0f3;border-radius:14px;padding:14px;text-align:center;}
+.statCard--green .statCard__n{color:#16a34a;}
+.statCard--orange .statCard__n{color:var(--orange);}
+.statCard__n{font-size:26px;font-weight:900;color:var(--navy);}
+.statCard__l{font-size:11px;color:#6b7280;margin-top:4px;}
+.courseStatRow{background:#fff;border:1px solid #eef0f3;border-radius:12px;padding:12px 14px;margin-bottom:8px;}
+.courseStatName{font-size:13px;font-weight:700;margin-bottom:6px;}
+.courseStatBar{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-bottom:4px;}
+.courseStatFill{height:100%;background:var(--navy);border-radius:999px;transition:width .5s ease;}
+.courseStatPct{font-size:12px;color:#6b7280;}
+
+/* ── Tabla usuarios ── */
+.userTable{background:#fff;border-radius:14px;border:1px solid #eef0f3;overflow:auto;}
+.userTable__head{display:grid;grid-template-columns:160px 80px repeat(4,1fr);background:var(--navy);color:#fff;font-size:12px;font-weight:700;padding:10px 14px;gap:8px;}
+.userTable__row{display:grid;grid-template-columns:160px 80px repeat(4,1fr);padding:10px 14px;gap:8px;border-bottom:1px solid #f3f4f6;align-items:center;font-size:13px;}
+.userTable__row:last-child{border-bottom:none;}
+.userTable__name{display:flex;align-items:center;gap:8px;font-weight:700;}
+.userAvatar{width:28px;height:28px;border-radius:999px;background:var(--navy);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800;flex-shrink:0;}
+.roleBadge{font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;}
+.roleBadge--guardia{background:#dbeafe;color:#1d4ed8;}
+.roleBadge--maestro{background:#dcfce7;color:#15803d;}
+.roleBadge--admin{background:#fee2e2;color:#b91c1c;}
+.roleBadge--supervisor{background:#fef3c7;color:#b45309;}
+.evidCard{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid #eef0f3;border-radius:14px;padding:14px;margin-bottom:10px;}
+.evidCard__icon{font-size:22px;line-height:1;}
+.evidCard__body{flex:1;min-width:0;}
+.evidCard__title{font-weight:800;font-size:14px;color:var(--text);}
+.evidCard__meta{font-size:12px;color:#6b7280;margin-top:2px;}
+.evidCard__notas{font-size:12px;color:#374151;margin-top:6px;background:#f9fafb;border-radius:8px;padding:6px 8px;}
+.evidCard__actions{display:flex;gap:6px;}
+.progCell{font-size:12px;text-align:center;}
+.progCell--pass{color:#15803d;}
+.progCell--fail{color:#b91c1c;}
+.progCell--none{color:#9ca3af;}
+
+/* ── Cursos admin ── */
+.adminCourseCard{background:#fff;border:1px solid #eef0f3;border-radius:16px;padding:16px;margin-bottom:12px;display:flex;gap:14px;align-items:flex-start;}
+.adminCourseCard__img{width:64px;height:64px;border-radius:12px;overflow:hidden;flex-shrink:0;}
+.adminCourseCard__img img{width:100%;height:100%;object-fit:cover;}
+.adminCourseCard__body{flex:1;min-width:0;}
+.adminCourseCard__badge{font-size:11px;color:#6b7280;background:#eef0f3;padding:3px 8px;border-radius:6px;display:inline-block;margin-bottom:4px;}
+.adminCourseCard__title{font-weight:800;font-size:14px;line-height:1.3;margin-bottom:4px;}
+.adminCourseCard__meta{font-size:12px;color:#6b7280;margin-bottom:6px;}
+.adminCourseCard__desc{font-size:12px;color:#6b7280;line-height:1.5;}
+.adminCourseCard__actions{display:flex;flex-direction:column;gap:8px;flex-shrink:0;}
+.btnEdit{border:2px solid var(--navy);background:#fff;color:var(--navy);font-weight:700;padding:8px 12px;border-radius:10px;font-size:12px;cursor:pointer;white-space:nowrap;}
+.btnEdit:hover{background:var(--navy);color:#fff;}
+
+/* ── Tabla evaluaciones ── */
+.evalTable{background:#fff;border-radius:14px;border:1px solid #eef0f3;overflow:auto;}
+.evalTable__head{display:grid;grid-template-columns:120px 1fr 80px 110px 90px;background:var(--navy);color:#fff;font-size:12px;font-weight:700;padding:10px 14px;gap:8px;}
+.evalTable__row{display:grid;grid-template-columns:120px 1fr 80px 110px 90px;padding:10px 14px;gap:8px;border-bottom:1px solid #f3f4f6;align-items:center;font-size:13px;}
+.evalTable__row:last-child{border-bottom:none;}
+.evalTable__curso{font-size:12px;color:#374151;}
+.statusBadge{font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;white-space:nowrap;}
+.statusBadge--pass{background:#dcfce7;color:#15803d;}
+.statusBadge--fail{background:#fee2e2;color:#b91c1c;}
+.emptyState{text-align:center;color:#9ca3af;padding:40px 20px;font-size:14px;}
+
+/* ── Modal editar ── */
+.modalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px;}
+.modal{background:#fff;border-radius:20px;padding:24px 22px 28px;max-width:420px;width:100%;}
+.modal__title{font-size:17px;font-weight:800;margin-bottom:16px;}
+.editLabel{display:block;font-size:12px;color:#6b7280;font-weight:600;margin-bottom:4px;margin-top:12px;}
+.editInput{width:100%;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:14px;outline:none;color:var(--text);}
+.editInput:focus{border-color:var(--navy);}
+.editTextarea{width:100%;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:14px;outline:none;color:var(--text);resize:vertical;}
+.editTextarea:focus{border-color:var(--navy);}
+.modal__actions{display:flex;gap:10px;margin-top:20px;}
+.modal__btn{flex:1;border:none;background:var(--navy);color:#fff;font-weight:800;padding:12px;border-radius:12px;font-size:14px;cursor:pointer;}
+.modal__btn--cancel{background:#eef0f3;color:#374151;}
+
+@media(min-width:768px){
+  .statsGrid{grid-template-columns:repeat(3,1fr);}
+  .adminCourseCard__actions{flex-direction:row;align-items:center;}
+}
+
+/* ── CRUD Usuarios ── */
+.tabToolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.btnPrimary{border:0;background:var(--navy);color:#fff;font-weight:700;padding:9px 16px;border-radius:10px;font-size:13px;cursor:pointer;}
+.btnPrimary:hover{opacity:.9;}
+
+.userTable__head{grid-template-columns:160px 100px 80px 80px repeat(3,80px) 90px!important;}
+.userTable__row{grid-template-columns:160px 100px 80px 80px repeat(3,80px) 90px!important;}
+.userTable__row--inactive{opacity:.55;}
+.userAvatar--inactive{background:#9ca3af!important;}
+
+.statusPill{font-size:11px;padding:3px 8px;border-radius:6px;font-weight:700;}
+.statusPill--active{background:#dcfce7;color:#15803d;}
+.statusPill--inactive{background:#fee2e2;color:#b91c1c;}
+
+.actionBtns{display:flex;gap:5px;align-items:center;}
+.btnAction{border:0;background:#eef0f3;border-radius:8px;width:30px;height:30px;font-size:14px;cursor:pointer;display:grid;place-items:center;}
+.btnAction--edit:hover{background:#dbeafe;}
+.btnAction--deact:hover{background:#fee2e2;}
+.btnAction--act:hover{background:#dcfce7;}
+.btnAction--del:hover{background:#fee2e2;}
+
+/* Botón Ver PDF */
+.btnVerPDF{
+  display:inline-flex;align-items:center;gap:8px;
+  background:#f0f4ff;color:var(--navy);
+  border:1.5px solid #b8ccdf;border-radius:10px;
+  padding:10px 16px;font-size:13px;font-weight:700;
+  text-decoration:none;margin-bottom:14px;
+  transition:background .15s;
+}
+.btnVerPDF:hover{background:#dbeafe;}
+.btnVerPDF svg{width:18px;height:18px;fill:var(--navy);flex-shrink:0;}

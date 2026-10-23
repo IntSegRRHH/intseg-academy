@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>IntSeg Academy</title>
+<link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+
+<div id="toast" class="toast hidden"></div>
+
+<!-- ══════════════ LOGIN ══════════════ -->
+<section id="viewLogin">
+  <div class="loginWrap">
+    <div class="loginLogo"><img src="logo-intseg-nobg.png" alt="IntSeg Academy" class="loginLogoImg"/></div>
+    <div class="loginCard">
+      <div class="loginCardTitle">Login</div>
+      <div class="loginError hidden" id="loginError">Usuario o contraseña incorrectos.</div>
+      <label class="loginLabel">Número de empleado:</label>
+      <input class="loginInput" id="inputUser" type="text" autocomplete="username"/>
+      <label class="loginLabel">Contraseña:</label>
+      <input class="loginInput" id="inputPass" type="password" autocomplete="current-password"/>
+      <button class="loginBtn" id="btnLogin">Ingresar</button>
+    </div>
+    <div class="loginFooter">by <strong>SafeR Technologies</strong></div>
+  </div>
+</section>
+
+<!-- ══════════════ APP SHELL ══════════════ -->
+<div id="appShell" class="app-shell hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar hidden" id="sidebar">
+    <div class="sidebar__logo">
+      <img src="logo-intseg-nobg.png" alt="IntSeg"/>
+      <span>Int'Seg<br>Academy</span>
+    </div>
+    <nav class="sidebar__nav">
+      <button class="sidebar__item active" id="sideInicio" onclick="navigate('catalog')">
+        <svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg>Inicio
+      </button>
+      <button class="sidebar__item" id="sideCursos" onclick="navigate('catalog')">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg>Cursos
+      </button>
+      <button class="sidebar__item" id="sideAdmin" onclick="navigate('admin')">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg>Admin
+      </button>
+      <button class="sidebar__item role-evid hidden" id="sideEvidencias" onclick="navigate('evidencias')">
+        <svg viewBox="0 0 24 24"><path d="M9 2a1 1 0 00-1 1v1H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2V3a1 1 0 00-1-1H9zm6 9l-5 5-3-3 1.41-1.41L10 13.17l3.59-3.58L15 11z"/></svg>Evidencias
+      </button>
+      <button class="sidebar__item" onclick="toast('Ajustes próximamente')">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg>Ajustes
+      </button>
+    </nav>
+    <div class="sidebar__footer">
+      <button class="sidebar__logout" onclick="doLogout()">
+        <svg viewBox="0 0 24 24"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0119 12a7 7 0 11-9.95-6.29V3.52A9 9 0 103 12a9 9 0 007 8.77V18.7A7 7 0 0117.83 5.17z"/></svg>Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══════════════ CATÁLOGO ══════════════ -->
+  <section id="viewCatalog" class="view hidden">
+    <header class="topbar">
+      <div class="topbar__left">
+        <img class="brand__mini" src="logo-intseg-nobg.png" alt="IntSeg"/>
+        <div class="topbar__title">Catálogo de Cursos</div>
+      </div>
+    </header>
+    <div class="page-content">
+      <div class="search">
+        <svg viewBox="0 0 24 24" class="search__icon"><path d="M10 4a6 6 0 104.472 10.03l3.75 3.75 1.414-1.414-3.75-3.75A6 6 0 0010 4zm0 2a4 4 0 110 8 4 4 0 010-8z"/></svg>
+        <input class="search__input" id="searchInput" placeholder="Buscar cursos..."/>
+      </div>
+      <div class="tabs">
+        <button class="tab tab--active" data-filter="all">Todos</button>
+        <button class="tab" data-filter="progress">En curso</button>
+        <button class="tab" data-filter="done">Completados</button>
+      </div>
+      <div class="list" id="courseList">
+        <article class="courseCard" data-status="new" data-course="dc3">
+          <div class="pill">Certificación DC3</div>
+          <div class="courseCard__row">
+            <div class="thumb"><img src="avatar-guardia.png" alt="Fundamento Legal"/></div>
+            <div class="courseCard__main">
+              <div class="courseCard__title">Fundamento Legal de la Seguridad Privada</div>
+              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
+            </div>
+            <button class="btnNavy" data-go="detail" data-course="dc3">Ver</button>
+          </div>
+        </article>
+        <article class="courseCard" data-status="new" data-course="iso">
+          <div class="pill">Certificación Internacional</div>
+          <div class="courseCard__row">
+            <div class="thumb"><img src="cover-iso28001.jpg" alt="C-TPAT"/></div>
+            <div class="courseCard__main">
+              <div class="courseCard__title">C-TPAT / OEA: Seguridad en la Cadena de Suministro</div>
+              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
+            </div>
+            <button class="btnNavy" data-go="detail" data-course="iso">Ver</button>
+          </div>
+        </article>
+        <article class="courseCard" data-status="new" data-course="aml">
+          <div class="pill">Seguridad Patrimonial</div>
+          <div class="courseCard__row">
+            <div class="thumb"><img src="cover-antilavado.jpg" alt="Patrimonial"/></div>
+            <div class="courseCard__main">
+              <div class="courseCard__title">Seguridad Patrimonial</div>
+              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
+            </div>
+            <button class="btnNavy" data-go="detail" data-course="aml">Ver</button>
+          </div>
+        </article>
+      </div>
+    </div>
+    <nav class="bottomNav">
+      <button class="navItem navItem--active" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg><span>Inicio</span></button>
+      <button class="navItem navItem--active" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
+      <button class="navItem" onclick="navigate('admin')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg><span>Admin</span></button>
+      <button class="navItem" onclick="toast('Ajustes próximamente')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg><span>Ajustes</span></button>
+    </nav>
+  </section>
+
+  <!-- ══════════════ DETALLE ══════════════ -->
+  <section id="viewDetail" class="hidden">
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="iconBtn" data-back="catalog"><svg viewBox="0 0 24 24" class="icon"><path d="M15.5 5l-7 7 7 7 1.5-1.5L11.5 12 17 6.5 15.5 5z"/></svg></button>
+        <div class="topbar__title">Detalle del Curso</div>
+      </div>
+    </header>
+    <div class="detailScroll">
+      <div class="pill" id="detBadge"></div>
+      <div class="detailHeader">
+        <div class="detailAvatar" id="detAvatar"><img src="avatar-guardia.png" alt="Curso"/></div>
+        <div class="detailInfo">
+          <div class="detailTitle" id="detTitle"></div>
+          <div class="metaRow">
+            <div class="metaItem"><span class="metaDot"><img src="instructor.jpg" alt=""/></span><span><b>Instructor:</b> <span id="detInstructor"></span></span></div>
+            <div class="metaItem"><svg viewBox="0 0 24 24" class="metaIcon"><path d="M12 7a1 1 0 011 1v4.382l2.447 1.413a1 1 0 01-1 1.732l-2.947-1.7A1 1 0 0111 13V8a1 1 0 011-1zm0-5a10 10 0 100 20 10 10 0 000-20zm0 2a8 8 0 110 16 8 8 0 010-16z"/></svg><span id="detDuration"></span></div>
+          </div>
+        </div>
+      </div>
+      <p class="detailDesc" id="detDesc"></p>
+      <a class="btnVerPDF hidden" id="btnVerPDF" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM12 17H8v-1h4v1zm4-3H8v-1h8v1zm0-3H8v-1h8v1z"/></svg>
+        Ver presentación original (PDF)
+      </a>
+      <div class="sectionTitle">Contenido del curso</div>
+      <div id="moduleList"></div>
+    </div>
+    <div class="detailFooter">
+      <button class="btnPrimaryWide" id="btnEval">Iniciar evaluación</button>
+    </div>
+  </section>
+
+  <!-- ══════════════ QUIZ ══════════════ -->
+  <section id="viewQuiz" class="hidden">
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="iconBtn" data-back="detail"><svg viewBox="0 0 24 24" class="icon"><path d="M15.5 5l-7 7 7 7 1.5-1.5L11.5 12 17 6.5 15.5 5z"/></svg></button>
+        <div class="topbar__title">Evaluación</div>
+      </div>
+    </header>
+    <div class="quizWrap">
+      <div class="quizHeader">
+        <div class="quizCourseName" id="quizCourseTitle"></div>
+        <div class="quizMeta" id="quizProgress">Pregunta 1 de 10</div>
+        <div class="quizBar"><div class="quizBar__fill" id="quizProgressBar" style="width:0%"></div></div>
+      </div>
+      <div class="quizBody">
+        <div class="quizQ" id="quizQuestion"></div>
+        <div class="quizOptions" id="quizOptions"></div>
+      </div>
+      <div class="quizFooter">
+        <button class="btnPrimaryWide hidden" id="btnNextQ">Siguiente →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ RESULTADO ══════════════ -->
+  <section id="viewResult" class="hidden">
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="iconBtn" data-back="catalog"><svg viewBox="0 0 24 24" class="icon"><path d="M15.5 5l-7 7 7 7 1.5-1.5L11.5 12 17 6.5 15.5 5z"/></svg></button>
+        <div class="topbar__title">Resultado</div>
+      </div>
+    </header>
+    <div class="resultWrap">
+      <div class="resultIcon" id="resultIcon">🏅</div>
+      <div class="resultTitle" id="resultTitle">¡Aprobado!</div>
+      <div class="resultScore" id="resultScore"></div>
+      <div class="resultBarWrap"><div class="resultBar"><div class="resultBarFill" id="resultBarFill"></div></div></div>
+      <div class="resultMsg" id="resultMsg"></div>
+      <button class="btnPrimaryWide" id="btnRetry" style="display:none">Reintentar evaluación</button>
+      <button class="btnSecondaryWide" data-back="catalog">← Volver al catálogo</button>
+    </div>
+  </section>
+
+  <!-- ══════════════ ADMIN ══════════════ -->
+  <section id="viewAdmin" class="view hidden">
+    <header class="topbar topbar--flat">
+      <div class="topbar__left">
+        <div class="topbar__title topbar__title--big">Panel de Administración</div>
+      </div>
+    </header>
+    <div class="page-content page-content--admin">
+
+      <!-- Tabs admin -->
+      <div class="adminTabs">
+        <button class="adminTab adminTab--active" data-atab="dashboard">📊 Dashboard</button>
+        <button class="adminTab" data-atab="usuarios">👥 Usuarios</button>
+        <button class="adminTab" data-atab="cursos">📘 Cursos</button>
+        <button class="adminTab" data-atab="evaluaciones">📋 Evaluaciones</button>
+      </div>
+
+      <!-- TAB: DASHBOARD -->
+      <div id="atab-dashboard" class="adminTabContent">
+        <div class="statsGrid" id="adminStats"></div>
+        <div class="sectionTitle" style="margin-top:20px">Progreso por curso</div>
+        <div id="adminCourseStats"></div>
+      </div>
+
+      <!-- TAB: USUARIOS -->
+      <div id="atab-usuarios" class="adminTabContent hidden">
+        <div class="tabToolbar">
+          <div class="sectionTitle">Usuarios registrados</div>
+          <button class="btnPrimary" onclick="openUserModal()">+ Nuevo usuario</button>
+        </div>
+        <div id="adminUserTable"></div>
+      </div>
+
+      <!-- TAB: CURSOS -->
+      <div id="atab-cursos" class="adminTabContent hidden">
+        <div class="sectionTitle" style="margin-bottom:12px">Gestión de cursos</div>
+        <div id="adminCourseList"></div>
+      </div>
+
+      <!-- TAB: EVALUACIONES -->
+      <div id="atab-evaluaciones" class="adminTabContent hidden">
+        <div class="sectionTitle" style="margin-bottom:12px">Resultados de evaluaciones</div>
+        <div id="adminEvalTable"></div>
+      </div>
+
+    </div>
+    <nav class="bottomNav">
+      <button class="navItem" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg><span>Inicio</span></button>
+      <button class="navItem" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
+      <button class="navItem navItem--active"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg><span>Admin</span></button>
+      <button class="navItem" onclick="toast('Ajustes próximamente')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg><span>Ajustes</span></button>
+    </nav>
+  </section>
+
+  <!-- ══════════════ EVIDENCIAS DE CAPACITACIÓN ══════════════ -->
+  <section id="viewEvidencias" class="view hidden">
+    <header class="topbar topbar--flat">
+      <div class="topbar__left">
+        <div class="topbar__title topbar__title--big">Evidencias de Capacitación</div>
+      </div>
+    </header>
+    <div class="page-content page-content--admin">
+      <div class="tabToolbar">
+        <div style="flex:1;max-width:340px">
+          <label class="editLabel" style="margin-top:0">Elemento (guardia)</label>
+          <select class="editInput" id="evidGuardiaSelect"></select>
+        </div>
+        <button class="btnPrimary" onclick="openEvidModal()">+ Subir evidencia</button>
+      </div>
+      <div class="tabToolbar" style="margin-top:-4px">
+        <div class="sectionTitle" style="margin:0">Historial del elemento</div>
+        <button class="btnAction" title="Descargar expediente completo (ZIP)" onclick="descargarExpediente()" style="width:auto;padding:0 12px;">⬇️ Descargar expediente</button>
+      </div>
+      <div id="evidHistorial"></div>
+    </div>
+    <nav class="bottomNav">
+      <button class="navItem" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg><span>Inicio</span></button>
+      <button class="navItem" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
+      <button class="navItem role-evid" onclick="navigate('admin')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg><span>Admin</span></button>
+      <button class="navItem navItem--active"><svg viewBox="0 0 24 24" class="navIcon"><path d="M9 2a1 1 0 00-1 1v1H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2V3a1 1 0 00-1-1H9zm6 9l-5 5-3-3 1.41-1.41L10 13.17l3.59-3.58L15 11z"/></svg><span>Evidencias</span></button>
+    </nav>
+  </section>
+
+</div><!-- /app-shell -->
+
+<!-- MODAL EDITAR CURSO -->
+<div id="modalCurso" class="modalOverlay hidden">
+  <div class="modal">
+    <div class="modal__title">Editar curso</div>
+    <input type="hidden" id="editCourseKey"/>
+    <label class="editLabel">Título</label>
+    <input class="editInput" id="editTitle" type="text"/>
+    <label class="editLabel">Badge / Certificación</label>
+    <input class="editInput" id="editBadge" type="text"/>
+    <label class="editLabel">Instructor</label>
+    <input class="editInput" id="editInstructor" type="text"/>
+    <label class="editLabel">Duración</label>
+    <input class="editInput" id="editDuration" type="text"/>
+    <label class="editLabel">Descripción</label>
+    <textarea class="editTextarea" id="editDesc" rows="3"></textarea>
+    <div class="modal__actions">
+      <button class="modal__btn modal__btn--cancel" id="btnCancelEdit">Cancelar</button>
+      <button class="modal__btn" id="btnSaveEdit">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL USUARIO -->
+<div id="modalUsuario" class="modalOverlay hidden">
+  <div class="modal">
+    <div class="modal__title" id="modalUsuarioTitle">Nuevo usuario</div>
+    <input type="hidden" id="editUserId"/>
+    <label class="editLabel">Nombre completo</label>
+    <input class="editInput" id="editUserNombre" type="text" placeholder="Ej. Juan García"/>
+    <label class="editLabel">Número de empleado (login)</label>
+    <input class="editInput" id="editUserUser" type="text" placeholder="Ej. 1042"/>
+    <label class="editLabel" id="editUserPassLabel">Contraseña</label>
+    <input class="editInput" id="editUserPass" type="text" placeholder="Mínimo 6 caracteres"/>
+    <label class="editLabel">Rol</label>
+    <select class="editInput" id="editUserRole">
+      <option value="guardia">Guardia</option>
+      <option value="supervisor">Supervisor</option>
+      <option value="maestro">Instructor</option>
+      <option value="admin">Administrador</option>
+    </select>
+    <label class="editLabel">Estado</label>
+    <select class="editInput" id="editUserStatus">
+      <option value="activo">Activo</option>
+      <option value="inactivo">Inactivo</option>
+    </select>
+    <div id="modalUsuarioError" class="loginError hidden" style="margin-top:10px"></div>
+    <div class="modal__actions">
+      <button class="modal__btn modal__btn--cancel" id="btnCancelUser">Cancelar</button>
+      <button class="modal__btn" id="btnSaveUser">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SUBIR EVIDENCIA -->
+<div id="modalEvidencia" class="modalOverlay hidden">
+  <div class="modal">
+    <div class="modal__title">Subir evidencia de entrenamiento</div>
+    <label class="editLabel" style="margin-top:0">Elemento (guardia)</label>
+    <select class="editInput" id="evidModalGuardia"></select>
+    <label class="editLabel">Tipo de entrenamiento</label>
+    <input class="editInput" id="evidEntrenamiento" type="text" placeholder="Ej. Uso de la fuerza, Rondines, C-TPAT..."/>
+    <label class="editLabel">Tipo de evidencia</label>
+    <select class="editInput" id="evidTipo">
+      <option value="Foto">Foto</option>
+      <option value="Video">Video</option>
+      <option value="PDF">PDF</option>
+      <option value="Lista de asistencia">Lista de asistencia firmada</option>
+    </select>
+    <label class="editLabel">Fecha del entrenamiento</label>
+    <input class="editInput" id="evidFecha" type="date"/>
+    <label class="editLabel">Archivo</label>
+    <input class="editInput" id="evidArchivo" type="file" accept="image/*,video/*,application/pdf"/>
+    <label class="editLabel">Notas (opcional)</label>
+    <textarea class="editTextarea" id="evidNotas" rows="2" placeholder="Observaciones adicionales..."></textarea>
+    <div id="evidModalError" class="loginError hidden" style="margin-top:10px"></div>
+    <div class="modal__actions">
+      <button class="modal__btn modal__btn--cancel" id="btnCancelEvid">Cancelar</button>
+      <button class="modal__btn" id="btnSaveEvid">Guardar evidencia</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
