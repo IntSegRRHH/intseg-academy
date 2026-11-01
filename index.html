@@ -102,7 +102,7 @@
       <button class="sidebar__item soloAdmin hidden" id="sideAdmin" onclick="navigate('admin')">
         <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg>Admin
       </button>
-      <button class="sidebar__item soloCapacitador hidden" id="sideAjustes" onclick="navigate('ajustes')">
+      <button class="sidebar__item soloAdmin hidden" id="sideAjustes" onclick="navigate('ajustes')">
         <svg viewBox="0 0 24 24"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg>Ajustes
       </button>
     </nav>
@@ -138,7 +138,7 @@
       <button class="navItem navItem--active" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg><span>Inicio</span></button>
       <button class="navItem navItem--active" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
       <button class="navItem" onclick="navigate('admin')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg><span>Admin</span></button>
-      <button class="navItem soloCapacitador hidden" onclick="navigate('ajustes')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg><span>Ajustes</span></button>
+      <button class="navItem soloAdmin hidden" onclick="navigate('ajustes')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg><span>Ajustes</span></button>
     </nav>
   </section>
 
@@ -235,6 +235,7 @@
         <button class="adminTab" data-atab="cursos">📘 Cursos</button>
         <button class="adminTab" data-atab="evaluaciones">📋 Evaluaciones</button>
         <button class="adminTab" data-atab="empleados">🪪 Empleados</button>
+        <button class="adminTab soloAdmin hidden" data-atab="bitacora">🧾 Bitácora</button>
       </div>
 
       <!-- TAB: DASHBOARD -->
@@ -263,6 +264,13 @@
       <div id="atab-evaluaciones" class="adminTabContent hidden">
         <div class="sectionTitle" style="margin-bottom:12px">Resultados de evaluaciones</div>
         <div id="adminEvalTable"></div>
+      </div>
+
+      <!-- TAB: BITÁCORA -->
+      <div id="atab-bitacora" class="adminTabContent hidden">
+        <div class="sectionTitle" style="margin-bottom:4px">Bitácora de actividad</div>
+        <p class="empAyuda">Registro de quién hizo qué y cuándo: altas, cambios y bajas de cursos, instructores, usuarios, evidencias y sesiones, además de inicios de sesión y descargas. No se puede editar ni borrar.</p>
+        <div id="bitRoot"></div>
       </div>
 
       <!-- TAB: EMPLEADOS -->
@@ -450,6 +458,20 @@
     <input class="editInput" id="insPuesto" type="text" placeholder="Ej. Capacitadora de seguridad privada"/>
     <label class="editLabel">Estado</label>
     <select class="editInput" id="insActivo"><option value="1">Activo</option><option value="0">Inactivo</option></select>
+    <div class="insAcceso" id="insAcceso">
+      <div class="insAcceso__t">Acceso a la plataforma</div>
+      <div id="insAccesoActual" class="insAcceso__ok hidden"></div>
+      <label class="empCheck" id="insCrearWrap"><input type="checkbox" id="insCrear"/> Crear usuario y contraseña para que entre a la plataforma</label>
+      <div id="insCampos" class="hidden">
+        <label class="editLabel" id="insUsuarioLabel">Usuario (para entrar)</label>
+        <input class="editInput" id="insUsuario" type="text" placeholder="Ej. jjimenez" autocapitalize="off" autocomplete="off"/>
+        <label class="editLabel" id="insPassLabel">Contraseña</label>
+        <div class="insPassFila"><input class="editInput" id="insPass" type="text" placeholder="Mínimo 6 caracteres" autocomplete="off"/><button type="button" class="btnAction" id="insGenerar">Generar</button></div>
+        <span class="ceNota">Entra como Capacitador: pasa lista, proyecta los cursos y sube evidencias. Entrégale estos datos.</span>
+      </div>
+      <div id="insVincularWrap" class="hidden"><label class="editLabel">O vincular con un usuario que ya existe</label>
+        <select class="editInput" id="insVincular"></select></div>
+    </div>
     <div id="insError" class="loginError hidden" style="margin-top:10px"></div>
     <div class="modal__actions">
       <button class="modal__btn modal__btn--cancel" id="btnInsCancelar">Cancelar</button>
@@ -469,6 +491,7 @@
 <script src="evidencias.js"></script>
 <script src="cursos-admin.js"></script>
 <script src="ajustes.js"></script>
+<script src="bitacora.js"></script>
 
 
 

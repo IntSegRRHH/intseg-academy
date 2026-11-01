@@ -83,6 +83,7 @@ const EVID = (() => {
     const { data, error } = await sb.storage.from("evidencias").download(fila.archivo_path);
     if (error || !data) { toast("No se pudo descargar el archivo"); return; }
     descargarBlob(data, fila.archivo_nombre || "evidencia");
+    registrarEvento("Descarga de evidencia", `${fila.tipo_entrenamiento} (${fila.tipo_evidencia}) del empleado ${fila.empleado_num}`);
   }
 
   async function borrar(id) {
@@ -172,6 +173,7 @@ const EVID = (() => {
     }
     zip.file("expediente.txt", manifiesto);
     descargarBlob(await zip.generateAsync({ type: "blob" }), `Expediente_${emp.num}.zip`);
+    registrarEvento("Descarga de expediente", `${emp.nombre} (No. ${emp.num}), ${filas.length} evidencia${filas.length === 1 ? "" : "s"}`);
   }
 
   // ── Eventos ────────────────────────────────────────────────

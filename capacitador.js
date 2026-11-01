@@ -79,7 +79,7 @@ const TR = (() => {
       <div class="page-content trPage trForm">
         <label class="editLabel" for="nsCurso">Curso</label>
         <select class="editInput" id="nsCurso">${opciones}</select>
-        ${(() => { const act = INSTRUCTORES.filter((i) => i.activo); if (!act.length) return ""; const pre = instructorDe(COURSE_CONTENT[Object.keys(COURSE_CONTENT)[0]]); return `<label class="editLabel" for="nsInstructor">Instructor</label><select class="editInput" id="nsInstructor">${act.map((i) => `<option value="${esc(i.id)}" ${pre && pre.id === i.id ? "selected" : ""}>${esc(i.nombre)}</option>`).join("")}</select>`; })()}
+        ${(() => { const act = INSTRUCTORES.filter((i) => i.activo); if (!act.length) return ""; const pre = INSTRUCTORES.find((i) => i.perfil_id && i.perfil_id === currentUser?.id) || instructorDe(COURSE_CONTENT[Object.keys(COURSE_CONTENT)[0]]); return `<label class="editLabel" for="nsInstructor">Instructor</label><select class="editInput" id="nsInstructor">${act.map((i) => `<option value="${esc(i.id)}" ${pre && pre.id === i.id ? "selected" : ""}>${esc(i.nombre)}</option>`).join("")}</select>`; })()}
         <label class="editLabel" for="nsSede">Cliente / sede</label>
         <input class="editInput" id="nsSede" placeholder="Ej. Planta Rosarito"/>
         <label class="editLabel" for="nsLugar">Lugar</label>
@@ -92,7 +92,8 @@ const TR = (() => {
       </div>`;
     document.getElementById("nsCurso").addEventListener("change", (e) => {
       const sel = document.getElementById("nsInstructor"); const ins = instructorDe(COURSE_CONTENT[e.target.value]);
-      if (sel && ins && [...sel.options].some((o) => o.value === ins.id)) sel.value = ins.id;
+      const soyInstructor = INSTRUCTORES.some((i) => i.perfil_id && i.perfil_id === currentUser?.id);   // quien da la clase es quien entró
+      if (sel && ins && !soyInstructor && [...sel.options].some((o) => o.value === ins.id)) sel.value = ins.id;
     });
   }
 

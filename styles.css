@@ -730,3 +730,34 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .ajAvatar--g{width:84px;height:84px;font-size:26px;}
 .insFoto{display:flex;align-items:center;gap:14px;margin-bottom:4px;}
 .ceBorr--pub{background:#dcfce7;color:#15803d;}
+
+/* ── Bitácora ── */
+.bitBarra{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0;}
+.bitBarra .editInput{margin:0;width:auto;min-width:160px;}
+.bitBarra #bitBuscar{flex:1;min-width:220px;}
+.bitBtn{width:auto;padding:0 12px;}
+.bitLista{display:grid;gap:8px;margin-top:8px;}
+.bitFila{display:grid;grid-template-columns:150px 190px 80px 1fr;gap:12px;align-items:start;background:#fff;border:1px solid #eef0f3;border-radius:12px;padding:10px 12px;font-size:13px;}
+.bitFecha{color:#6b7280;font-size:12px;}
+.bitQuien{display:flex;flex-direction:column;line-height:1.3;}
+.bitQuien span{font-size:11px;color:#6b7280;}
+.bitPill{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:3px 8px;}
+.bitPill--alta{background:#dcfce7;color:#15803d;}
+.bitPill--cambio{background:#e0e7ff;color:#3730a3;}
+.bitPill--baja{background:#fee2e2;color:#b91c1c;}
+.bitPill--evento{background:#f3f4f6;color:#4b5563;}
+.bitQue{word-break:break-word;}
+.bitDet summary{cursor:pointer;color:#6b4fa0;font-size:12px;margin-top:4px;}
+.bitDet pre{background:#f9fafb;border-radius:8px;padding:8px;font-size:11px;white-space:pre-wrap;margin:4px 0 0;max-height:220px;overflow:auto;}
+@media(max-width:760px){.bitFila{grid-template-columns:1fr;gap:4px;}}
+
+/* ── Acceso de instructores ── */
+.insAcceso{margin-top:14px;padding:12px;border:1px solid #e5e7eb;border-radius:12px;background:#faf8fd;}
+.insAcceso__t{font-weight:800;font-size:13px;color:#332b4e;margin-bottom:6px;}
+.insAcceso__ok{font-size:13px;color:#15803d;background:#dcfce7;border-radius:8px;padding:8px 10px;margin-bottom:6px;}
+.insPassFila{display:flex;gap:8px;align-items:center;}
+.insPassFila .editInput{margin:0;flex:1;}
+.insPassFila .btnAction{width:auto;padding:0 12px;}
+.ajAcc{font-size:12px;margin-top:3px;}
+.ajAcc--ok{color:#15803d;}
+.ajAcc--no{color:#b45309;}

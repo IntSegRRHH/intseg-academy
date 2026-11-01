@@ -115,6 +115,7 @@ async function iniciarSesion(usuario, extra = {}) {
   if (esStaff()) await Promise.all([cargarUsuarios(), cargarProgresoTodos(), EMPLEADOS.cargar()]);
   await CURSOS.cargar();
   await cargarInstructores();
+  if (esStaff()) registrarEvento("Inicio de sesión", `${currentUser.nombre} (${currentUser.user}, ${currentUser.role})`);
   renderCatalog();
   refreshCatalog();
   if (currentUser.role === "maestro") TR.mostrarLista();
@@ -150,6 +151,8 @@ async function doLogin(){
 
 async function doLogout(){
   closeSlides();
+  // el cierre de sesión se registra antes de salir (después ya no hay permiso); máximo 1.5 s de espera
+  if (esStaff()) { try { await Promise.race([registrarEvento("Cierre de sesión", `${currentUser.nombre} (${currentUser.user})`), new Promise(r=>setTimeout(r,1500))]); } catch(e) {} }
   try { await sb.auth.signOut(); } catch(e) {}
   currentUser=null;currentCourseKey=null;
   PROGRESO_PROPIO={};PROGRESO_TODOS={};USUARIOS=[];EMPLEADOS.limpiar();
@@ -959,6 +962,7 @@ async function importarEmpleados(){
     document.getElementById("empImportText").value = "";
     await EMPLEADOS.cargar();
     await renderAdminEmpleados();
+    registrarEvento("Lista de empleados importada", `${filas.length} cargados${bajas ? `, ${bajas} marcados como inactivos` : ""}`);
     decir(`Listo: ${filas.length} empleados cargados${bajas ? `, ${bajas} marcados como inactivos` : ""}${ignoradas.length ? `, ${ignoradas.length} líneas ignoradas` : ""}.`, true);
   } catch (e) {
     decir("No se pudo importar: " + e.message);
