@@ -131,85 +131,8 @@
         <button class="tab" data-filter="progress">En curso</button>
         <button class="tab" data-filter="done">Completados</button>
       </div>
-      <div class="list" id="courseList">
-        <article class="courseCard" data-status="new" data-course="dc3">
-          <div class="pill">Fundamento Legal</div>
-          <div class="courseCard__row">
-            <div class="thumb"><img src="assets/ea9d7bb2e8.jpg" alt="Fundamento Legal"/></div>
-            <div class="courseCard__main">
-              <div class="courseCard__title">Fundamento Legal de la Seguridad Privada</div>
-              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
-            </div>
-            <button class="btnNavy" data-go="detail" data-course="dc3">Ver</button>
-          </div>
-        </article>
-        <article class="courseCard" data-status="new" data-course="iso">
-          <div class="pill">Certificación Internacional</div>
-          <div class="courseCard__row">
-            <div class="thumb"><img src="assets/180225137c.jpg" alt="C-TPAT"/></div>
-            <div class="courseCard__main">
-              <div class="courseCard__title">C-TPAT / OEA: Seguridad en la Cadena de Suministro</div>
-              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
-            </div>
-            <button class="btnNavy" data-go="detail" data-course="iso">Ver</button>
-          </div>
-        </article>
-        <article class="courseCard" data-status="new" data-course="aml">
-          <div class="pill">Seguridad Patrimonial</div>
-          <div class="courseCard__row">
-            <div class="thumb"><img src="assets/28cae2f510.jpg" alt="Patrimonial"/></div>
-            <div class="courseCard__main">
-              <div class="courseCard__title">Seguridad Patrimonial</div>
-              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
-            </div>
-            <button class="btnNavy" data-go="detail" data-course="aml">Ver</button>
-          </div>
-        </article>
-        <article class="courseCard" data-status="new" data-course="nextgen">
-          <div class="pill">SafeR NextGen</div>
-          <div class="courseCard__row">
-            <div class="thumb"><img src="assets/fa877c7194.jpg" alt="SafeR NextGen"/></div>
-            <div class="courseCard__main">
-              <div class="courseCard__title">Operación de Seguridad SafeR NextGen</div>
-              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
-            </div>
-            <button class="btnNavy" data-go="detail" data-course="nextgen">Ver</button>
-          </div>
-        </article>
-        <article class="courseCard" data-status="new" data-course="rondines">
-          <div class="pill">Operación en campo</div>
-          <div class="courseCard__row">
-            <div class="thumb"><img src="assets/7240ec0f7f.jpg" alt="Rondines Perimetrales"/></div>
-            <div class="courseCard__main">
-              <div class="courseCard__title">Rondines Perimetrales</div>
-              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
-            </div>
-            <button class="btnNavy" data-go="detail" data-course="rondines">Ver</button>
-          </div>
-        </article>
-        <article class="courseCard" data-status="new" data-course="ehs">
-          <div class="pill">Seguridad e Higiene</div>
-          <div class="courseCard__row">
-            <div class="thumb"><img src="assets/7f3fd35ed4.jpg" alt="Medidas Preventivas de Seguridad e Higiene (EHS)"/></div>
-            <div class="courseCard__main">
-              <div class="courseCard__title">Medidas Preventivas de Seguridad e Higiene (EHS)</div>
-              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
-            </div>
-            <button class="btnNavy" data-go="detail" data-course="ehs">Ver</button>
-          </div>
-        </article>
-        <article class="courseCard" data-status="new" data-course="pld">
-          <div class="pill">Prevención de ilícitos</div>
-          <div class="courseCard__row">
-            <div class="thumb"><img src="assets/ce5091497e.jpg" alt="Detección de Operaciones Ilícitas"/></div>
-            <div class="courseCard__main">
-              <div class="courseCard__title">Detección de Operaciones Ilícitas en Puestos de Control</div>
-              <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
-            </div>
-            <button class="btnNavy" data-go="detail" data-course="pld">Ver</button>
-          </div>
-        </article>
-      </div>
+      <div class="chipsModulo" id="chipsModulo"></div>
+      <div class="list" id="courseList"></div>
     </div>
     <nav class="bottomNav">
       <button class="navItem navItem--active" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg><span>Inicio</span></button>
@@ -332,8 +255,8 @@
 
       <!-- TAB: CURSOS -->
       <div id="atab-cursos" class="adminTabContent hidden">
-        <div class="sectionTitle" style="margin-bottom:12px">Gestión de cursos</div>
-        <div id="adminCourseList"></div>
+        <div id="cursosLista"><div id="adminCourseList"></div></div>
+        <div id="cursoEditor" class="hidden"></div>
       </div>
 
       <!-- TAB: EVALUACIONES -->
@@ -512,6 +435,7 @@
 <script src="capacitador.js"></script>
 <script src="fichas.js"></script>
 <script src="evidencias.js"></script>
+<script src="cursos-admin.js"></script>
 
 
 

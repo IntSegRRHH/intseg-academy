@@ -18,6 +18,8 @@ async function llamarAccesoGuardia(payload) {
   });
   const json = await resp.json().catch(() => ({}));
   if (!resp.ok) throw new Error(json.error || "No se pudo completar el acceso.");
+  // Respuesta que no viene de nuestra función (p. ej. quedó el código de ejemplo de Supabase)
+  if (!json.ok) throw new Error("La función de acceso no respondió como se esperaba. Avisa al administrador: acceso-guardia debe tener el código correcto.");
   return json;
 }
 

@@ -111,6 +111,8 @@ async function iniciarSesion(usuario, extra = {}) {
   currentUser = { ...usuario, ...extra };
   await cargarProgresoPropio();
   if (esStaff()) await Promise.all([cargarUsuarios(), cargarProgresoTodos(), EMPLEADOS.cargar()]);
+  await CURSOS.cargar();
+  renderCatalog();
   refreshCatalog();
   if (currentUser.role === "maestro") TR.mostrarLista();
   else if (currentUser.role === "supervisor") navigate("evidencias");
@@ -125,7 +127,7 @@ function mostrarErrorLogin(msg, ms = 3500) {
 
 // Personal (capacitador, supervisor, admin): usuario + contraseña
 async function doLogin(){
-  const u=document.getElementById("inputUser").value.trim().toLowerCase();
+  const u=document.getElementById("inputUser").value.trim().toLowerCase().replace(/@intseg\.local$/,"");   // acepta "admin" o "admin@intseg.local"
   const p=document.getElementById("inputPass").value;
   const btn=document.getElementById("btnLogin");
   if(!u||!p) return;
@@ -300,6 +302,59 @@ const ACCESO = (() => {
 })();
 
 // ── Catálogo ───────────────────────────────────────────────
+// Catálogo dinámico: se dibuja con los cursos de la nube, agrupado por módulo
+// (los guardias solo ven los publicados)
+let FILTRO_CAT = { estado: "all", texto: "", modulo: "all" };
+function tarjetaCurso(k){
+  const c=COURSE_CONTENT[k];
+  return `<article class="courseCard" data-status="new" data-course="${escHtml(k)}">
+    <div class="pill">${escHtml(c.badge)}${CURSOS.esBorrador(k)?" · Borrador":""}</div>
+    <div class="courseCard__row">
+      <div class="thumb">${c.img?`<img src="${escHtml(c.img)}" alt="${escHtml(c.badge)}"/>`:""}</div>
+      <div class="courseCard__main">
+        <div class="courseCard__title">${escHtml(c.title)}</div>
+        <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
+      </div>
+      <button class="btnNavy" data-go="detail" data-course="${escHtml(k)}">Ver</button>
+    </div>
+  </article>`;
+}
+function renderCatalog(){
+  const list=document.getElementById("courseList");
+  const claves=CURSOS.claves().filter(k=>CURSOS.visible(k));
+  const grupos=[...MODULOS.map(m=>m.id),0];                        // 0 = cursos sin módulo
+  let html="", chips=[];
+  grupos.forEach(id=>{
+    const ks=claves.filter(k=>(Number(COURSE_CONTENT[k].modulo)||0)===id);
+    if(!ks.length)return;
+    chips.push(id);
+    html+=`<section class="catModulo" data-modulo="${id}"><h3 class="catModulo__t">${id?escHtml(nombreModulo(id)):"Otros cursos"}</h3>${ks.map(tarjetaCurso).join("")}</section>`;
+  });
+  list.innerHTML=html||`<div class="emptyState">Aún no hay cursos publicados.</div>`;
+  if(FILTRO_CAT.modulo!=="all"&&!chips.includes(Number(FILTRO_CAT.modulo)))FILTRO_CAT.modulo="all";
+  const cont=document.getElementById("chipsModulo");
+  if(cont){
+    cont.innerHTML=chips.length>1?[`<button class="chipM${FILTRO_CAT.modulo==="all"?" chipM--on":""}" data-mod="all">Todos los módulos</button>`,
+      ...chips.map(id=>`<button class="chipM${String(FILTRO_CAT.modulo)===String(id)?" chipM--on":""}" data-mod="${id}">${id?escHtml(nombreModulo(id)):"Otros"}</button>`)].join(""):"";
+  }
+  aplicarFiltrosCatalogo();
+}
+// Combina los tres filtros (avance, búsqueda y módulo) y oculta los módulos que quedan vacíos
+function aplicarFiltrosCatalogo(){
+  const q=FILTRO_CAT.texto.toLowerCase();
+  document.querySelectorAll("#courseList .catModulo").forEach(sec=>{
+    let visibles=0;
+    sec.querySelectorAll(".courseCard").forEach(card=>{
+      const t=card.querySelector(".courseCard__title")?.textContent.toLowerCase()||"";
+      const show=(FILTRO_CAT.estado==="all"||card.dataset.status===FILTRO_CAT.estado)
+        &&(!q||t.includes(q))
+        &&(FILTRO_CAT.modulo==="all"||sec.dataset.modulo===String(FILTRO_CAT.modulo));
+      card.style.display=show?"":"none"; if(show)visibles++;
+    });
+    sec.style.display=visibles?"":"none";
+  });
+}
+
 function refreshCatalog(){
   Object.keys(COURSE_CONTENT).forEach(key=>{
     const prog=getProgress(key);
@@ -323,6 +378,7 @@ function refreshCatalog(){
       if(txt)txt.textContent="Sin iniciar";
     }
   });
+  aplicarFiltrosCatalogo();
 }
 
 // ── Visor de imágenes ──────────────────────────────────────
@@ -554,7 +610,7 @@ function loadDetail(key){
     mod.items.forEach(item=>{const li=document.createElement("li");li.textContent=item;ul.appendChild(li);});
     inner.appendChild(ul);body.appendChild(inner);
     header.addEventListener("click",()=>{
-      if(c.modules.some(m=>m.imgs?.length||m.video)){openSlides(key,c.modules.indexOf(mod));return;}
+      if(c.modules.some(m=>m.imgs?.length||m.video)){openSlides(key,c.modules.indexOf(mod),{modoCapacitador:esStaff()});return;}
       const isOpen=wrap.classList.contains("accordion--open");
       document.querySelectorAll(".accordion").forEach(a=>a.classList.remove("accordion--open"));
       if(!isOpen)wrap.classList.add("accordion--open");
@@ -907,28 +963,7 @@ async function importarEmpleados(){
 document.getElementById("btnEmpImportar")?.addEventListener("click", importarEmpleados);
 document.getElementById("empBuscarAdmin")?.addEventListener("input", (e) => { EMP_FILTRO = e.target.value; pintarEmpleados(); });
 
-function renderAdminCourses(){
-  const keys=Object.keys(COURSE_CONTENT);
-  let html="";
-  keys.forEach(k=>{
-    const c=COURSE_CONTENT[k];
-    html+=`<div class="adminCourseCard">
-      <div class="adminCourseCard__img"><img src="${c.img}" alt="${c.title}"/></div>
-      <div class="adminCourseCard__body">
-        <div class="adminCourseCard__badge">${c.badge}</div>
-        <div class="adminCourseCard__title">${c.title}</div>
-        <div class="adminCourseCard__meta">👤 ${c.instructor} &nbsp;|&nbsp; ⏱ ${c.duration}</div>
-        <div class="adminCourseCard__desc">${c.desc}</div>
-      </div>
-      <div class="adminCourseCard__actions">
-        <button class="btnEdit" onclick="openEditModal('${k}')">✏️ Editar</button>
-        <button class="btnNavy" data-go="detail" data-course="${k}">Ver curso</button>
-      </div>
-    </div>`;
-  });
-  document.getElementById("adminCourseList").innerHTML=html;
-}
-
+function renderAdminCourses(){ CURSOS_ADMIN.render(); }
 
 function renderAdminEvals(){
   const keys=Object.keys(COURSE_CONTENT);
@@ -951,8 +986,8 @@ function renderAdminEvals(){
     <div class="evalTable__head"><div>Usuario</div><div>Curso</div><div>Puntaje</div><div>Estado</div><div>Fecha</div></div>`;
   rows.forEach(r=>{
     html+=`<div class="evalTable__row">
-      <div>${r.nombre}</div>
-      <div class="evalTable__curso">${r.curso}</div>
+      <div>${escHtml(r.nombre)}</div>
+      <div class="evalTable__curso">${escHtml(r.curso)}</div>
       <div><strong>${r.score}/10</strong></div>
       <div><span class="statusBadge ${r.passed?"statusBadge--pass":"statusBadge--fail"}">${r.passed?"Aprobado":"No aprobado"}</span></div>
       <div>${r.date}</div>
@@ -962,7 +997,6 @@ function renderAdminEvals(){
   document.getElementById("adminEvalTable").innerHTML=html;
 }
 
-// ── Editar curso ───────────────────────────────────────────
 function openEditModal(key){
   const c=COURSE_CONTENT[key];
   document.getElementById("editCourseKey").value=key;
@@ -1029,18 +1063,19 @@ document.querySelectorAll(".tab").forEach(tab=>{
   tab.addEventListener("click",function(){
     document.querySelectorAll(".tab").forEach(t=>t.classList.remove("tab--active"));
     this.classList.add("tab--active");
-    const f=this.dataset.filter;
-    document.querySelectorAll("#courseList .courseCard").forEach(card=>{
-      card.style.display=(f==="all"||card.dataset.status===f)?"":"none";
-    });
+    FILTRO_CAT.estado=this.dataset.filter;
+    aplicarFiltrosCatalogo();
   });
 });
 document.getElementById("searchInput").addEventListener("input",function(){
-  const q=this.value.toLowerCase();
-  document.querySelectorAll("#courseList .courseCard").forEach(card=>{
-    const t=card.querySelector(".courseCard__title")?.textContent.toLowerCase()||"";
-    card.style.display=t.includes(q)?"":"none";
-  });
+  FILTRO_CAT.texto=this.value;
+  aplicarFiltrosCatalogo();
+});
+document.getElementById("chipsModulo").addEventListener("click",e=>{
+  const b=e.target.closest("[data-mod]");if(!b)return;
+  FILTRO_CAT.modulo=b.dataset.mod;
+  document.querySelectorAll("#chipsModulo .chipM").forEach(c=>c.classList.toggle("chipM--on",c===b));
+  aplicarFiltrosCatalogo();
 });
 
 

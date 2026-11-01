@@ -645,3 +645,60 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;backgr
 .empImportMsg.ok{color:#15803d;}
 .empImportMsg.mal{color:#b91c1c;}
 .roleBadge--supervisor{background:#fef3c7;color:#b45309;}
+
+/* ── Editor de cursos (Admin → Cursos) ── */
+.ceAviso{background:#f3f0f8;border:1px solid #ddd5ee;border-radius:12px;padding:12px 14px;font-size:13px;color:#332b4e;margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;line-height:1.4;}
+.ceAviso.mal{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
+.ceFila{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid #eef0f3;border-radius:14px;padding:12px 14px;margin-top:10px;flex-wrap:wrap;}
+.ceFila__main{flex:1;min-width:200px;}
+.ceFila__t{font-weight:800;font-size:14px;color:var(--text);}
+.ceFila__s{font-size:12px;color:#6b7280;margin-top:2px;}
+.ceTop{display:flex;gap:14px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+.ceVolver{width:auto;padding:0 12px;}
+.ceBorr{font-size:11px;font-weight:700;background:#fef3c7;color:#b45309;border-radius:6px;padding:2px 8px;margin-left:6px;vertical-align:middle;}
+.ceBloque{background:#fff;border:1px solid #eef0f3;border-radius:14px;padding:16px;margin-bottom:16px;}
+.ceBloque h4{margin:0 0 8px;font-size:15px;color:var(--text);}
+.ceCuenta{font-size:12px;font-weight:600;color:#6b7280;margin-left:8px;}
+.ceDos{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+.cePortada{display:block;width:100%;max-width:220px;border-radius:10px;margin:4px 0 8px;}
+.ceVacio{font-size:12px;color:#9ca3af;margin:4px 0 8px;}
+.ceLink{display:inline-block;font-size:13px;margin:4px 0 8px;}
+.ceArchivo{display:inline-block;margin:6px 6px 0 0;padding:8px 12px;border:1px dashed #b9a9d8;border-radius:10px;font-size:13px;font-weight:600;color:#332b4e;cursor:pointer;background:#faf8fd;}
+.ceArchivo input{display:none;}
+.ceArchivo--solido{background:#332b4e;color:#fff;border:0;}
+.ceImportar{background:#f3f0f8;border-radius:12px;padding:12px;font-size:13px;margin-bottom:12px;line-height:1.5;}
+.ceNota{font-size:12px;color:#6b7280;display:block;margin:4px 0;}
+.ceTema,.cePreg{border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin-top:12px;background:#fcfcfd;}
+.cePreg--video{background:#faf8fd;}
+.ceTema__cab,.cePreg__cab{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.ceTema__n{font-size:12px;font-weight:800;color:#6b4fa0;text-transform:uppercase;letter-spacing:.04em;}
+.ceMini{display:flex;gap:4px;}
+.ceMini button,.ceMiniX{border:1px solid #e5e7eb;background:#fff;border-radius:8px;width:32px;height:30px;cursor:pointer;font-size:13px;}
+.ceMini button:disabled{opacity:.35;cursor:default;}
+.ceThumbs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0;}
+.ceThumb{position:relative;width:96px;height:64px;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;background:#f3f4f6;}
+.ceThumb img{width:100%;height:100%;object-fit:cover;}
+.ceThumb button{position:absolute;top:2px;right:2px;border:0;background:rgba(0,0,0,.6);color:#fff;border-radius:6px;width:22px;height:22px;cursor:pointer;font-size:11px;}
+.ceVideo{border-top:1px dashed #d1d5db;margin-top:12px;padding-top:10px;}
+.ceVideo__t{font-weight:800;font-size:13px;margin-bottom:6px;}
+.ceVideo video{width:100%;max-width:420px;border-radius:10px;background:#000;display:block;margin-bottom:6px;}
+.ceOpc{display:flex;gap:8px;align-items:center;margin-top:6px;}
+.ceOpc .editInput{margin:0;flex:1;}
+.ceRadio{font-weight:800;font-size:13px;white-space:nowrap;display:flex;gap:4px;align-items:center;}
+.ceSeg{max-width:140px;}
+.ceAgregar{width:auto;padding:0 14px;margin-top:12px;}
+.ceExcel{margin-top:16px;padding-top:12px;border-top:1px dashed #d1d5db;}
+.ceBarra{position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;padding:12px 4px;display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap;z-index:5;}
+.ceEstado{margin-right:auto;font-size:13px;color:#6b7280;}
+.ceEstado.mal{color:#b91c1c;font-weight:600;}
+.modal__btn--sec{background:#fff;color:var(--brandMid,#332b4e);border:1px solid #332b4e;}
+.ceAcciones{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.ceNota.mal{color:#b91c1c;font-weight:600;}
+
+/* ── Módulos de cursos ── */
+.chipsModulo{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 2px;}
+.chipM{border:1px solid #d6cdea;background:#fff;color:#332b4e;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;}
+.chipM--on{background:#332b4e;color:#fff;border-color:#332b4e;}
+.catModulo__t{font-size:15px;font-weight:800;color:#332b4e;margin:20px 4px 6px;padding-bottom:6px;border-bottom:2px solid #e9e3f5;}
+.ceMod{display:inline-block;font-size:11px;font-weight:700;background:#ede9f7;color:#4c3a82;border-radius:6px;padding:2px 8px;margin-right:6px;}
+.ceMod--no{background:#fef3c7;color:#b45309;}
