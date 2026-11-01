@@ -263,8 +263,14 @@ const ACCESO = (() => {
     btn.disabled = true; btn.textContent = "Entrando…";
     try {
       const r = await llamarAccesoGuardia({ action: "entrar", num: empleado.num, foto });
-      const { error: e1 } = await sb.auth.verifyOtp({ token_hash: r.token_hash, type: r.type || "magiclink" });
-      if (e1) throw new Error("No se pudo iniciar la sesión. Intenta de nuevo.");
+      // Se prueban los tipos de verificación que acepta Supabase hasta que uno abra la sesión
+      let falloOtp = null;
+      for (const tipo of [...new Set([r.type, "email", "magiclink"].filter(Boolean))]) {
+        const { error: e1 } = await sb.auth.verifyOtp({ token_hash: r.token_hash, type: tipo });
+        if (!e1) { falloOtp = null; break; }
+        falloOtp = e1;
+      }
+      if (falloOtp) { console.error("verifyOtp:", falloOtp); throw new Error("No se pudo iniciar la sesión (" + falloOtp.message + ")."); }
       const { data: u } = await sb.auth.getUser();
       const { data: perfil } = await sb.from("perfiles").select("*").eq("id", u.user.id).maybeSingle();
       if (!perfil) throw new Error("No se encontró tu perfil. Contacta a Capacitación.");
