@@ -68,7 +68,7 @@ async function saveProgress(courseKey, passed, score) {
 
 // ── Navegación ─────────────────────────────────────────────
 function navigate(name) {
-  ["viewLogin","viewCatalog","viewDetail","viewAdmin","viewQuiz","viewResult","viewTrainer","viewFichas","viewEvidencias"].forEach(id=>{
+  ["viewLogin","viewCatalog","viewDetail","viewAdmin","viewQuiz","viewResult","viewTrainer","viewFichas","viewEvidencias","viewAjustes"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.add("hidden");
   });
   document.getElementById("appShell").classList.add("hidden");
@@ -79,7 +79,7 @@ function navigate(name) {
   document.getElementById("sidebar").classList.toggle("hidden",!!esGuardia);
   document.getElementById("guardBanner").classList.toggle("hidden",!esGuardia);
   if(esGuardia)document.getElementById("guardNombre").textContent=currentUser.nombre;
-  const map={catalog:"viewCatalog",detail:"viewDetail",admin:"viewAdmin",quiz:"viewQuiz",result:"viewResult",trainer:"viewTrainer",fichas:"viewFichas",evidencias:"viewEvidencias"};
+  const map={catalog:"viewCatalog",detail:"viewDetail",admin:"viewAdmin",quiz:"viewQuiz",result:"viewResult",trainer:"viewTrainer",fichas:"viewFichas",evidencias:"viewEvidencias",ajustes:"viewAjustes"};
   if(map[name]) document.getElementById(map[name]).classList.remove("hidden");
   document.querySelectorAll(".sidebar__item").forEach(i=>i.classList.remove("active"));
   if(name==="catalog"){document.getElementById("sideInicio")?.classList.add("active");document.getElementById("sideCursos")?.classList.add("active");}
@@ -87,6 +87,7 @@ function navigate(name) {
   if(name==="trainer"){document.getElementById("sideSesiones")?.classList.add("active");}
   if(name==="fichas"){document.getElementById("sideFichas")?.classList.add("active");}
   if(name==="evidencias"){document.getElementById("sideEvidencias")?.classList.add("active");}
+  if(name==="ajustes"){document.getElementById("sideAjustes")?.classList.add("active");}
   // Visibilidad por rol: capacitador = maestro/admin; personal = supervisor/maestro/admin
   const esCap=currentUser&&(currentUser.role==="maestro"||currentUser.role==="admin");
   document.querySelectorAll(".soloCapacitador").forEach(el=>el.classList.toggle("hidden",!esCap));
@@ -94,6 +95,7 @@ function navigate(name) {
   document.querySelectorAll(".soloAdmin").forEach(el=>el.classList.toggle("hidden",!(currentUser&&currentUser.role==="admin")));
   if(name==="admin") renderAdmin();
   if(name==="evidencias") EVID.mostrar();
+  if(name==="ajustes") AJUSTES.mostrar();
   window.scrollTo(0,0);
 }
 
@@ -112,6 +114,7 @@ async function iniciarSesion(usuario, extra = {}) {
   await cargarProgresoPropio();
   if (esStaff()) await Promise.all([cargarUsuarios(), cargarProgresoTodos(), EMPLEADOS.cargar()]);
   await CURSOS.cargar();
+  await cargarInstructores();
   renderCatalog();
   refreshCatalog();
   if (currentUser.role === "maestro") TR.mostrarLista();
@@ -322,20 +325,21 @@ function tarjetaCurso(k){
 function renderCatalog(){
   const list=document.getElementById("courseList");
   const claves=CURSOS.claves().filter(k=>CURSOS.visible(k));
-  const grupos=[...MODULOS.map(m=>m.id),0];                        // 0 = cursos sin módulo
-  let html="", chips=[];
+  // Siempre se muestran los módulos definidos (aunque estén vacíos); "Otros" solo si hay cursos sin módulo
+  const sinModulo=claves.filter(k=>!(Number(COURSE_CONTENT[k].modulo)||0));
+  const grupos=[...MODULOS.map(m=>m.id),...(sinModulo.length?[0]:[])];
+  let html="";
   grupos.forEach(id=>{
     const ks=claves.filter(k=>(Number(COURSE_CONTENT[k].modulo)||0)===id);
-    if(!ks.length)return;
-    chips.push(id);
-    html+=`<section class="catModulo" data-modulo="${id}"><h3 class="catModulo__t">${id?escHtml(nombreModulo(id)):"Otros cursos"}</h3>${ks.map(tarjetaCurso).join("")}</section>`;
+    html+=`<section class="catModulo" data-modulo="${id}"><h3 class="catModulo__t">${id?escHtml(nombreModulo(id)):"Otros cursos"}</h3>`
+      +(ks.length?ks.map(tarjetaCurso).join(""):`<div class="catVacio">Aún no hay cursos en este módulo.</div>`)+`</section>`;
   });
-  list.innerHTML=html||`<div class="emptyState">Aún no hay cursos publicados.</div>`;
-  if(FILTRO_CAT.modulo!=="all"&&!chips.includes(Number(FILTRO_CAT.modulo)))FILTRO_CAT.modulo="all";
+  list.innerHTML=html;
+  if(FILTRO_CAT.modulo!=="all"&&!grupos.includes(Number(FILTRO_CAT.modulo)))FILTRO_CAT.modulo="all";
   const cont=document.getElementById("chipsModulo");
   if(cont){
-    cont.innerHTML=chips.length>1?[`<button class="chipM${FILTRO_CAT.modulo==="all"?" chipM--on":""}" data-mod="all">Todos los módulos</button>`,
-      ...chips.map(id=>`<button class="chipM${String(FILTRO_CAT.modulo)===String(id)?" chipM--on":""}" data-mod="${id}">${id?escHtml(nombreModulo(id)):"Otros"}</button>`)].join(""):"";
+    cont.innerHTML=[`<button class="chipM${FILTRO_CAT.modulo==="all"?" chipM--on":""}" data-mod="all">Todos los módulos</button>`,
+      ...grupos.map(id=>`<button class="chipM${String(FILTRO_CAT.modulo)===String(id)?" chipM--on":""}" data-mod="${id}">${id?escHtml(nombreModulo(id)):"Otros"}</button>`)].join("");
   }
   aplicarFiltrosCatalogo();
 }
@@ -343,15 +347,16 @@ function renderCatalog(){
 function aplicarFiltrosCatalogo(){
   const q=FILTRO_CAT.texto.toLowerCase();
   document.querySelectorAll("#courseList .catModulo").forEach(sec=>{
+    const tarjetas=sec.querySelectorAll(".courseCard");
+    const delModulo=FILTRO_CAT.modulo==="all"||sec.dataset.modulo===String(FILTRO_CAT.modulo);
     let visibles=0;
-    sec.querySelectorAll(".courseCard").forEach(card=>{
+    tarjetas.forEach(card=>{
       const t=card.querySelector(".courseCard__title")?.textContent.toLowerCase()||"";
-      const show=(FILTRO_CAT.estado==="all"||card.dataset.status===FILTRO_CAT.estado)
-        &&(!q||t.includes(q))
-        &&(FILTRO_CAT.modulo==="all"||sec.dataset.modulo===String(FILTRO_CAT.modulo));
+      const show=(FILTRO_CAT.estado==="all"||card.dataset.status===FILTRO_CAT.estado)&&(!q||t.includes(q))&&delModulo;
       card.style.display=show?"":"none"; if(show)visibles++;
     });
-    sec.style.display=visibles?"":"none";
+    // un módulo vacío solo se muestra cuando no hay búsqueda ni filtro de avance activos
+    sec.style.display=tarjetas.length?(visibles?"":"none"):((FILTRO_CAT.estado==="all"&&!q&&delModulo)?"":"none");
   });
 }
 
@@ -576,10 +581,11 @@ function loadDetail(key){
   const c=COURSE_CONTENT[key];if(!c)return;
   document.getElementById("detBadge").textContent=c.badge;
   document.getElementById("detTitle").textContent=c.title;
-  document.getElementById("detInstructor").textContent=c.instructor;
+  const ins=instructorDe(c);
+  document.getElementById("detInstructor").textContent=ins?ins.nombre:c.instructor;
   document.getElementById("detDuration").textContent=c.duration;
   document.getElementById("detDesc").textContent=c.desc;
-  const img=document.querySelector("#detAvatar img");if(img)img.src=c.img;
+  const img=document.querySelector("#detAvatar img");if(img)img.src=(ins&&ins.foto)||c.img;
 
   // Botón PDF
   const pdfBtn = document.getElementById("btnVerPDF");

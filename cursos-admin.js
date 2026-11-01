@@ -104,6 +104,7 @@ const CURSOS = (() => {
 const CURSOS_ADMIN = (() => {
   const $ = (id) => document.getElementById(id);
   const esc = escHtml;
+  const pl = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
   const MAX_VIDEO_MB = 50;
   let ED = null;          // borrador en edición: { key, nuevo, publicado, orden, datos, quiz }
 
@@ -165,7 +166,7 @@ const CURSOS_ADMIN = (() => {
         <button class="btnAction btnAction--del" title="Eliminar" data-ca="borrar" data-k="${esc(k)}">🗑️</button>` : "";
       return `<div class="ceFila">
         <div class="ceFila__main"><div class="ceFila__t">${esc(c.title)}</div>
-          <div class="ceFila__s"><span class="ceMod${CURSOS.modulo(k) ? "" : " ceMod--no"}">${esc(nombreModulo(CURSOS.modulo(k)))}</span> ${esc(c.badge)} · ${c.modules.length} temas · ${nq} preguntas${vids ? ` · ${vids} video${vids > 1 ? "s" : ""}` : ""}</div></div>
+          <div class="ceFila__s"><span class="ceMod${CURSOS.modulo(k) ? "" : " ceMod--no"}">${esc(nombreModulo(CURSOS.modulo(k)))}</span> ${esc(c.badge)} · ${pl(c.modules.length, "tema", "temas")} · ${pl(nq, "pregunta", "preguntas")}${vids ? ` · ${vids} video${vids > 1 ? "s" : ""}` : ""}</div></div>
         <span class="statusPill ${pub ? "statusPill--active" : "statusPill--inactive"}">${pub ? "Publicado" : "Borrador"}</span>
         <div class="actionBtns"><button class="btnAction" title="Ver el curso (videos y diapositivas)" data-ca="ver" data-k="${esc(k)}">👁️</button>${acciones}</div>
       </div>`;
@@ -184,7 +185,7 @@ const CURSOS_ADMIN = (() => {
       ED.datos.modules.forEach((m) => { if (m.video?.preguntas) m.video.preguntas = m.video.preguntas.map(rellenar); });
     } else {
       ED = { key: "c" + Date.now().toString(36), nuevo: true, publicado: false, orden: CURSOS.maxOrden() + 10,
-        datos: { modulo: 0, badge: "", title: "", instructor: currentUser?.nombre || "", duration: "", vigenciaMeses: 12, img: "", pdf: "", desc: "", modules: [{ title: "", items: [] }] },
+        datos: { modulo: 0, badge: "", title: "", instructor: INSTRUCTORES.length ? "" : (currentUser?.nombre || ""), instructorId: "", duration: "", vigenciaMeses: 12, img: "", pdf: "", desc: "", modules: [{ title: "", items: [] }] },
         quiz: [] };
     }
     $("cursosLista").classList.add("hidden"); $("cursoEditor").classList.remove("hidden");
@@ -195,12 +196,19 @@ const CURSOS_ADMIN = (() => {
     $("cursoEditor").innerHTML = htmlEditor();
     window.scrollTo(0, y);
   }
+  function htmlInstructor(d) {
+    const actual = instructorDe(d);
+    const lista = INSTRUCTORES.filter((i) => i.activo || (actual && i.id === actual.id));
+    if (!lista.length) return `<input class="editInput" data-p="datos.instructor" value="${esc(d.instructor)}" placeholder="Nombre del instructor"/><span class="ceNota">Agrega instructores en Ajustes para elegirlos de una lista.</span>`;
+    const suelto = d.instructor && !actual ? `<option value="__txt" selected>${esc(d.instructor)} (no está en la lista)</option>` : "";
+    return `<select class="editInput" data-instr><option value="">— Elige al instructor —</option>${suelto}${lista.map((i) => `<option value="${esc(i.id)}" ${actual && i.id === actual.id ? "selected" : ""}>${esc(i.nombre)}</option>`).join("")}</select><span class="ceNota">Se administran en Ajustes → Instructores.</span>`;
+  }
   function htmlEditor() {
     const d = ED.datos;
     const nv = d.modules.reduce((n, m) => n + (m.video ? 1 : 0), 0);
     return `
     <div class="ceTop"><button class="btnAction ceVolver" data-ca="cerrar">← Volver a cursos</button>
-      <div class="sectionTitle" style="margin:0">${ED.nuevo ? "Nuevo curso" : "Editar curso"} <span class="ceBorr">${ED.publicado ? "Publicado" : "Borrador"}</span></div></div>
+      <div class="sectionTitle" style="margin:0">${ED.nuevo ? "Nuevo curso" : "Editar curso"} <span class="ceBorr${ED.publicado ? " ceBorr--pub" : ""}">${ED.publicado ? "Publicado" : "Borrador"}</span></div></div>
 
     <div class="ceBloque"><h4>1. Datos del curso</h4>
       <label class="editLabel">Título</label><input class="editInput" data-p="datos.title" value="${esc(d.title)}" placeholder="Ej. Uso de la fuerza"/>
@@ -208,7 +216,7 @@ const CURSOS_ADMIN = (() => {
         <div><label class="editLabel">Módulo</label><select class="editInput" data-num data-p="datos.modulo">
           <option value="0">— Elige el módulo —</option>${MODULOS.map((m) => `<option value="${m.id}" ${Number(d.modulo) === m.id ? "selected" : ""}>${esc(nombreModulo(m.id))}</option>`).join("")}</select></div>
         <div><label class="editLabel">Categoría</label><input class="editInput" data-p="datos.badge" value="${esc(d.badge)}" placeholder="Ej. Certificación DC3"/></div>
-        <div><label class="editLabel">Instructor</label><input class="editInput" data-p="datos.instructor" value="${esc(d.instructor)}"/></div>
+        <div><label class="editLabel">Instructor</label>${htmlInstructor(d)}</div>
         <div><label class="editLabel">Duración</label><input class="editInput" data-p="datos.duration" value="${esc(d.duration)}" placeholder="Ej. 2 horas"/></div>
         <div><label class="editLabel">Vigencia de la constancia (meses)</label><input class="editInput" type="number" min="1" max="60" data-num data-p="datos.vigenciaMeses" value="${esc(d.vigenciaMeses ?? 12)}"/></div>
       </div>
@@ -221,7 +229,7 @@ const CURSOS_ADMIN = (() => {
       </div>
     </div>
 
-    <div class="ceBloque"><h4>2. Temas <span class="ceCuenta">${d.modules.length} temas${nv ? ` · ${nv} video${nv > 1 ? "s" : ""}` : ""}</span></h4>
+    <div class="ceBloque"><h4>2. Temas <span class="ceCuenta">${pl(d.modules.length, "tema", "temas")}${nv ? ` · ${nv} video${nv > 1 ? "s" : ""}` : ""}</span></h4>
       <div class="ceImportar"><b>¿Ya tienes la presentación?</b> Sube el PDF y cada página se vuelve una diapositiva del curso.
         <label class="ceArchivo ceArchivo--solido">Importar PDF como diapositivas<input type="file" accept="application/pdf" data-file="pdfSlides"/></label>
         <span class="ceNota">Desde PowerPoint: Archivo → Exportar → PDF.</span></div>
@@ -229,7 +237,7 @@ const CURSOS_ADMIN = (() => {
       <button class="btnAction ceAgregar" data-ca="temaNuevo">+ Agregar tema</button>
     </div>
 
-    <div class="ceBloque"><h4>3. Examen <span class="ceCuenta">${ED.quiz.length} preguntas</span></h4>
+    <div class="ceBloque"><h4>3. Examen <span class="ceCuenta">${pl(ED.quiz.length, "pregunta", "preguntas")}</span></h4>
       <p class="ceNota">El guardia recibe hasta 10 preguntas al azar de este banco y aprueba con el 80 % o más. Conviene tener 15 o más para que no se repitan.</p>
       ${ED.quiz.map((q, j) => htmlPregunta(q, j)).join("")}
       <button class="btnAction ceAgregar" data-ca="qNueva">+ Agregar pregunta</button>
@@ -322,10 +330,11 @@ const CURSOS_ADMIN = (() => {
     ED.quiz.forEach((p, j) => { const c = compactarPregunta(p, `Pregunta ${j + 1}`, errores); if (c) quiz.push(c); });
     if (publicar) {
       if (!Number(d.modulo)) errores.push("Elige el módulo del curso para publicarlo.");
+      if (!(d.instructor || "").trim()) errores.push("Elige al instructor del curso para publicarlo.");
       if (!modules.length) errores.push("Para publicar agrega al menos un tema.");
       if (!quiz.length) errores.push("Para publicar agrega al menos una pregunta de examen.");
     }
-    const datos = { modulo: Number(d.modulo) || 0, badge: d.badge.trim() || "Curso", title: d.title.trim(), instructor: d.instructor.trim(), duration: d.duration.trim(),
+    const datos = { modulo: Number(d.modulo) || 0, badge: d.badge.trim() || "Curso", title: d.title.trim(), instructor: (d.instructor || "").trim(), instructorId: d.instructorId || "", duration: d.duration.trim(),
       vigenciaMeses: Number(d.vigenciaMeses) || 12, img: d.img || "", pdf: d.pdf || "", desc: d.desc.trim(), modules };
     return { errores, datos, quiz };
   }
@@ -479,7 +488,13 @@ const CURSOS_ADMIN = (() => {
     const ed = $("cursoEditor"), lista = $("cursosLista");
     if (!ed || ed.dataset.listo) return; ed.dataset.listo = "1";
     const entrada = (ev) => {
-      const t = ev.target; if (!t.dataset.p || !ED) return;
+      const t = ev.target;
+      if (t.dataset.instr !== undefined && ED) {
+        if (t.value === "__txt") return;
+        const i = INSTRUCTORES.find((x) => x.id === t.value);
+        ED.datos.instructor = i ? i.nombre : ""; ED.datos.instructorId = i ? i.id : ""; return;
+      }
+      if (!t.dataset.p || !ED) return;
       if (t.type === "radio" && ev.type !== "change") return;
       set(t.dataset.p, t.dataset.num !== undefined ? Number(t.value) : t.value);
     };

@@ -102,7 +102,7 @@
       <button class="sidebar__item soloAdmin hidden" id="sideAdmin" onclick="navigate('admin')">
         <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg>Admin
       </button>
-      <button class="sidebar__item" onclick="toast('Ajustes próximamente')">
+      <button class="sidebar__item soloCapacitador hidden" id="sideAjustes" onclick="navigate('ajustes')">
         <svg viewBox="0 0 24 24"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg>Ajustes
       </button>
     </nav>
@@ -138,7 +138,7 @@
       <button class="navItem navItem--active" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M12 3l9 8h-3v10h-5v-6H11v6H6V11H3l9-8z"/></svg><span>Inicio</span></button>
       <button class="navItem navItem--active" onclick="navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
       <button class="navItem" onclick="navigate('admin')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H7v-5h2v5zm4 0h-2v-8h2v8zm4 0h-2v-3h2v3z"/></svg><span>Admin</span></button>
-      <button class="navItem" onclick="toast('Ajustes próximamente')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg><span>Ajustes</span></button>
+      <button class="navItem soloCapacitador hidden" onclick="navigate('ajustes')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19.14 12.936a7.97 7.97 0 000-1.872l2.036-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 0 000 1.87l-2.04 1.58 1.93 3.34 2.4-.97c.5.4 1.05.72 1.62.95l.36 2.54h5.74l.36-2.54c.57-.23 1.12-.55 1.62-.95l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 113.5-3.5 3.5 3.5 0 01-3.5 3.5z"/></svg><span>Ajustes</span></button>
     </nav>
   </section>
 
@@ -335,6 +335,17 @@
     </nav>
   </section>
 
+  <!-- ══════════════ AJUSTES ══════════════ -->
+  <section id="viewAjustes" class="view hidden">
+    <header class="topbar topbar--flat"><div class="topbar__left"><div class="topbar__title topbar__title--big">Ajustes</div></div></header>
+    <div class="page-content page-content--admin" id="ajustesRoot"></div>
+    <nav class="bottomNav">
+      <button class="navItem" onclick="refreshCatalog();navigate('catalog')"><svg viewBox="0 0 24 24" class="navIcon"><path d="M4 4h16v4H4V4zm0 6h16v10H4V10zm2 2v6h12v-6H6z"/></svg><span>Cursos</span></button>
+      <button class="navItem navItem--active"><svg viewBox="0 0 24 24" class="navIcon"><path d="M19.14 12.94a7.97 7.97 0 000-1.88l2.04-1.58-1.93-3.34-2.4.97a7.98 7.98 0 00-1.62-.94l-.36-2.54H9.13l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.4-.97-1.93 3.34 2.04 1.58a7.97 7.97 0 000 1.88l-2.04 1.58 1.93 3.34 2.4-.97c.51.4 1.05.71 1.62.94l.36 2.54h3.86l.36-2.54c.57-.23 1.11-.54 1.62-.94l2.4.97 1.93-3.34-2.04-1.58zM12 15.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/></svg><span>Ajustes</span></button>
+      <button class="navItem" onclick="doLogout()"><svg viewBox="0 0 24 24" class="navIcon"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0119 12a7 7 0 11-9.95-6.29V3.52A9 9 0 103 12a9 9 0 007 8.77V18.7A7 7 0 0117.83 5.17z"/></svg><span>Salir</span></button>
+    </nav>
+  </section>
+
 </div><!-- /app-shell -->
 
 <!-- Cámara (abre la cámara trasera en celular/tablet) -->
@@ -426,6 +437,27 @@
   </div>
 </div>
 
+
+<!-- MODAL INSTRUCTOR -->
+<div id="modalInstructor" class="modalOverlay hidden">
+  <div class="modal">
+    <div class="modal__title" id="insTitulo">Agregar instructor</div>
+    <div class="insFoto"><div id="insFotoVista"></div>
+      <label class="ceArchivo">Subir foto<input type="file" id="insFoto" accept="image/*"/></label></div>
+    <label class="editLabel">Nombre completo</label>
+    <input class="editInput" id="insNombre" type="text" placeholder="Ej. Claudia Escoto"/>
+    <label class="editLabel">Puesto o especialidad (opcional)</label>
+    <input class="editInput" id="insPuesto" type="text" placeholder="Ej. Capacitadora de seguridad privada"/>
+    <label class="editLabel">Estado</label>
+    <select class="editInput" id="insActivo"><option value="1">Activo</option><option value="0">Inactivo</option></select>
+    <div id="insError" class="loginError hidden" style="margin-top:10px"></div>
+    <div class="modal__actions">
+      <button class="modal__btn modal__btn--cancel" id="btnInsCancelar">Cancelar</button>
+      <button class="modal__btn" id="btnInsGuardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="config.js"></script>
@@ -436,6 +468,7 @@
 <script src="fichas.js"></script>
 <script src="evidencias.js"></script>
 <script src="cursos-admin.js"></script>
+<script src="ajustes.js"></script>
 
 
 
