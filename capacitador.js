@@ -79,6 +79,7 @@ const TR = (() => {
       <div class="page-content trPage trForm">
         <label class="editLabel" for="nsCurso">Curso</label>
         <select class="editInput" id="nsCurso">${opciones}</select>
+        ${(() => { const act = INSTRUCTORES.filter((i) => i.activo); if (!act.length) return ""; const pre = instructorDe(COURSE_CONTENT[Object.keys(COURSE_CONTENT)[0]]); return `<label class="editLabel" for="nsInstructor">Instructor</label><select class="editInput" id="nsInstructor">${act.map((i) => `<option value="${esc(i.id)}" ${pre && pre.id === i.id ? "selected" : ""}>${esc(i.nombre)}</option>`).join("")}</select>`; })()}
         <label class="editLabel" for="nsSede">Cliente / sede</label>
         <input class="editInput" id="nsSede" placeholder="Ej. Planta Rosarito"/>
         <label class="editLabel" for="nsLugar">Lugar</label>
@@ -89,6 +90,10 @@ const TR = (() => {
         </div>
         <button class="btnPrimaryWide" data-tr="crear">Crear sesión</button>
       </div>`;
+    document.getElementById("nsCurso").addEventListener("change", (e) => {
+      const sel = document.getElementById("nsInstructor"); const ins = instructorDe(COURSE_CONTENT[e.target.value]);
+      if (sel && ins && [...sel.options].some((o) => o.value === ins.id)) sel.value = ins.id;
+    });
   }
 
   async function crear() {
@@ -103,7 +108,7 @@ const TR = (() => {
       fecha: document.getElementById("nsFecha").value || hoy(),
       horaInicio: document.getElementById("nsHora").value,
       duracion: c.duration,
-      capacitador: currentUser?.nombre || "",
+      capacitador: (() => { const s = document.getElementById("nsInstructor"); return s ? s.options[s.selectedIndex].text : (currentUser?.nombre || ""); })(),
       capacitadorUser: currentUser?.user || "",
       estado: "abierta",
       participantes: [],
