@@ -12,21 +12,35 @@ const PRES = (() => {
   const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   let canal = null, win = null, key = null, slides = [], i = 0, negro = false;
   let t0 = 0, reloj = null, vigila = null, conectada = false;
+  let baseLen = 0, banco = [], examen = [], revelada = false;     // examen proyectado al final del curso
   let vid = { pausado: true, tiempo: 0, duracion: 0, terminado: false };
 
   const curso = () => COURSE_CONTENT[key];
   const mmss = (s) => `${String(Math.floor((s || 0) / 60)).padStart(2, "0")}:${String(Math.floor((s || 0) % 60)).padStart(2, "0")}`;
   const esVideo = (s) => !!(s && s.video);
 
+  const barajar = (arr) => { const r = [...arr]; for (let a = r.length - 1; a > 0; a--) { const b = Math.floor(Math.random() * (a + 1)); [r[a], r[b]] = [r[b], r[a]]; } return r; };
+  function armarExamen(n) {
+    examen = barajar(banco).slice(0, n || 10).map((q) => { const o = barajar(q.opts.map((_, k) => k)); return { q: q.q, opts: o.map((k) => q.opts[k]), ans: o.indexOf(q.ans) }; });
+    const base = slides.slice(0, baseLen);
+    if (!examen.length) { slides = base; return; }
+    slides = base.concat([{ tipo: "examen", mi: -1, title: "Examen", total: examen.length }],
+      examen.map((q, k) => ({ tipo: "pregunta", mi: -1, n: k + 1, total: examen.length, title: `Pregunta ${k + 1} de ${examen.length}`, q: q.q, opts: q.opts, ans: q.ans })));
+  }
+  const esExamen = (s) => !!(s && (s.tipo === "examen" || s.tipo === "pregunta"));
+
   // ── mensajes hacia la ventana de proyección ──
   function enviar() {
     if (!canal) return;
     const s = slides[i];
     const base = { t: "slide", i, title: s.title, items: s.items || [] };
-    canal.postMessage(esVideo(s)
+    if (s.tipo === "examen") canal.postMessage({ ...base, kind: "examen", curso: curso().title, total: s.total });
+    else if (s.tipo === "pregunta") canal.postMessage({ ...base, kind: "pregunta", n: s.n, total: s.total, q: s.q, opts: s.opts });
+    else canal.postMessage(esVideo(s)
       ? { ...base, kind: "video", src: s.video.src || null, webm: s.video.webm || null, poster: s.video.poster || "" }
       : s.src ? { ...base, kind: "img", src: new URL(s.src, location.href).href } : { ...base, kind: "texto" });
     canal.postMessage({ t: "negro", on: negro });
+    if (s.tipo === "pregunta" && revelada) canal.postMessage({ t: "revelar", ans: s.ans });
   }
 
   // ── abrir la ventana de proyección (debe ocurrir dentro del clic del usuario) ──
@@ -46,7 +60,8 @@ const PRES = (() => {
   function iniciar(k, desde = 0) {
     if (!COURSE_CONTENT[k]) return;
     if (document.getElementById("presRoot")) salir(true);
-    key = k; slides = buildSlides(k);
+    key = k; slides = buildSlides(k); baseLen = slides.length;
+    banco = (typeof QUIZZES !== "undefined" && QUIZZES[k]) ? QUIZZES[k] : []; revelada = false; armarExamen(10);
     if (!slides.length) { toast("Este curso todavía no tiene temas para presentar"); return; }
     i = Math.max(0, Math.min(desde, slides.length - 1)); negro = false; conectada = false;
     vid = { pausado: true, tiempo: 0, duracion: 0, terminado: false };
@@ -104,30 +119,56 @@ const PRES = (() => {
     $("presAtras").onclick = () => canal.postMessage({ t: "video", cmd: "rel", v: -10 });
     $("presAdelante").onclick = () => canal.postMessage({ t: "video", cmd: "rel", v: 10 });
     $("presBarra").oninput = (e) => { if (vid.duracion) canal.postMessage({ t: "video", cmd: "ir", v: (e.target.value / 1000) * vid.duracion }); };
-    $("presLista").onclick = (e) => { const li = e.target.closest("[data-mi]"); if (li) ir(slides.findIndex((s) => s.mi === Number(li.dataset.mi))); };
+    $("presLista").onclick = (e) => { const li = e.target.closest("[data-mi]"); if (li) ir(Number(li.dataset.mi) < 0 ? baseLen : slides.findIndex((s) => s.mi === Number(li.dataset.mi))); };
+    $("presVista").onclick = (e) => {
+      if (e.target.closest("#presRevelar")) { revelar(); return; }
+      const b = e.target.closest("[data-ex]"); if (!b) return;
+      armarExamen(b.dataset.ex === "todas" ? banco.length : 10); i = Math.min(baseLen, slides.length - 1); pintar();
+    };
   }
 
   function pintar() {
-    const s = slides[i], c = curso(), m = c.modules[s.mi];
+    const s = slides[i], c = curso(), m = c.modules[s.mi] || {};
+    revelada = false;
     $("presTitulo").textContent = c.title;
     $("presCont").textContent = `· ${i + 1} / ${slides.length} · ${s.title}`;
-    $("presVista").innerHTML = esVideo(s)
+    $("presVista").innerHTML = s.tipo === "examen" ? vistaIntro(s) : s.tipo === "pregunta" ? vistaPregunta(s) : esVideo(s)
       ? `<div class="presVideoPoster">${s.video.poster ? `<img src="${esc(s.video.poster)}" alt=""/>` : ""}<div class="presVideoIcono">▶ Video</div></div>`
       : s.src ? `<img src="${esc(s.src)}" alt=""/>`
       : `<div class="presTexto"><h2>${esc(s.title)}</h2><ul>${(s.items || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>`;
     const sg = slides[i + 1];
-    $("presSig").innerHTML = !sg ? `<div class="presFin">Fin de la presentación</div>`
+    $("presSig").innerHTML = !sg ? `<div class="presFin">${examen.length ? "Fin del examen" : "Fin de la presentación"}</div>`
+      : sg.tipo === "examen" ? `<div class="presMini presMini--txt"><b>Examen</b> · ${sg.total} preguntas</div>`
+      : sg.tipo === "pregunta" ? `<div class="presMini presMini--txt">Pregunta ${sg.n}: ${esc(sg.q)}</div>`
       : esVideo(sg) ? `<div class="presMini presMini--video">${sg.video.poster ? `<img src="${esc(sg.video.poster)}" alt=""/>` : ""}<span>▶ ${esc(sg.title)}</span></div>`
       : sg.src ? `<div class="presMini"><img src="${esc(sg.src)}" alt=""/></div>`
       : `<div class="presMini presMini--txt">${esc(sg.title)}</div>`;
-    const notas = String(m.notas || "").trim();
+    const notas = s.tipo === "pregunta" ? `Respuesta correcta: ${"ABCD"[s.ans]}) ${s.opts[s.ans]}`
+      : s.tipo === "examen" ? "Cada pregunta se proyecta sin respuesta. Pulsa → o espacio para revelarla, y otra vez para pasar a la siguiente."
+      : String(m.notas || "").trim();
     $("presNotas").innerHTML = notas ? esc(notas).replace(/\n/g, "<br>") : `<span class="presSinNotas">Sin notas en este tema. Puedes agregarlas al editar el curso.</span>`;
-    $("presLista").innerHTML = c.modules.map((mm, k) => `<li data-mi="${k}" class="${k === s.mi ? "on" : ""}">${esc(mm.title || "Tema " + (k + 1))}${mm.video ? " ▶" : ""}</li>`).join("");
+    $("presLista").innerHTML = c.modules.map((mm, k) => `<li data-mi="${k}" class="${k === s.mi ? "on" : ""}">${esc(mm.title || "Tema " + (k + 1))}${mm.video ? " ▶" : ""}</li>`).join("")
+      + (examen.length ? `<li data-mi="-1" class="${esExamen(s) ? "on" : ""}">Examen (${examen.length} preguntas)</li>` : "");
     const act = $("presLista").querySelector(".on"); if (act) act.scrollIntoView({ block: "nearest" });
     $("presVideo").classList.toggle("hidden", !esVideo(s));
     $("presNegro").classList.toggle("on", negro);
     vid = { pausado: true, tiempo: 0, duracion: 0, terminado: false }; pintarVideo(); pintarEstado();
     enviar();
+  }
+  function vistaIntro(s) {
+    const opciones = banco.length > 10
+      ? `<div class="presExBtns"><button class="presBtn ${s.total === 10 ? "on" : ""}" data-ex="diez">10 al azar</button><button class="presBtn ${s.total === banco.length ? "on" : ""}" data-ex="todas">Todas (${banco.length})</button></div>` : "";
+    return `<div class="presExamen"><div class="presExTitulo">Examen</div><div class="presExSub">${s.total} pregunta${s.total === 1 ? "" : "s"} · se proyectan una por una</div>${opciones}</div>`;
+  }
+  function vistaPregunta(s) {
+    return `<div class="presExamen"><div class="presExN">Pregunta ${s.n} de ${s.total}</div><div class="presExQ">${esc(s.q)}</div>
+      <div class="presOpciones">${s.opts.map((o, k) => `<div class="presOpc ${k === s.ans ? "correcta" : ""}"><b>${"ABCD"[k]}</b><span>${esc(o)}</span>${k === s.ans ? `<em>✔ correcta</em>` : ""}</div>`).join("")}</div>
+      <button class="presBtn presBtn--play presRevelar" id="presRevelar">Revelar respuesta en el proyector</button></div>`;
+  }
+  function revelar() {
+    const s = slides[i]; if (!s || s.tipo !== "pregunta" || revelada) return;
+    revelada = true; canal.postMessage({ t: "revelar", ans: s.ans });
+    const b = $("presRevelar"); if (b) { b.textContent = "Respuesta revelada"; b.disabled = true; }
   }
   function pintarVideo() {
     if (!$("presPlay")) return;
@@ -150,7 +191,10 @@ const PRES = (() => {
 
   // ── navegación ──
   function ir(n) { if (n < 0 || n >= slides.length) return; i = n; pintar(); }
-  function siguiente() { if (i < slides.length - 1) ir(i + 1); else toast("Es la última diapositiva"); }
+  function siguiente() {
+    if (slides[i] && slides[i].tipo === "pregunta" && !revelada) { revelar(); return; }      // primero se revela, luego se avanza
+    if (i < slides.length - 1) ir(i + 1); else toast(examen.length ? "Fin del examen" : "Es la última diapositiva");
+  }
   function anterior() { if (i > 0) ir(i - 1); }
   function alternarNegro() { negro = !negro; $("presNegro").classList.toggle("on", negro); canal.postMessage({ t: "negro", on: negro }); }
   function teclado(e) {

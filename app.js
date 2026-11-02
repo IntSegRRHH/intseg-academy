@@ -68,7 +68,7 @@ async function saveProgress(courseKey, passed, score) {
 
 // ── Navegación ─────────────────────────────────────────────
 function navigate(name) {
-  ["viewLogin","viewCatalog","viewDetail","viewAdmin","viewQuiz","viewResult","viewTrainer","viewFichas","viewEvidencias","viewAjustes"].forEach(id=>{
+  ["viewLogin","viewCatalog","viewDetail","viewAdmin","viewQuiz","viewResult","viewTrainer","viewFichas","viewEvidencias","viewAjustes","viewInicio","viewDashboard"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.add("hidden");
   });
   document.getElementById("appShell").classList.add("hidden");
@@ -76,13 +76,16 @@ function navigate(name) {
   document.getElementById("appShell").classList.remove("hidden");
   const esGuardia=currentUser&&currentUser.role==="guardia";
   document.body.classList.toggle("rol-guardia",!!esGuardia);
+  document.body.classList.toggle("rol-staff",esStaff());
   document.getElementById("sidebar").classList.toggle("hidden",!!esGuardia);
   document.getElementById("guardBanner").classList.toggle("hidden",!esGuardia);
   if(esGuardia)document.getElementById("guardNombre").textContent=currentUser.nombre;
-  const map={catalog:"viewCatalog",detail:"viewDetail",admin:"viewAdmin",quiz:"viewQuiz",result:"viewResult",trainer:"viewTrainer",fichas:"viewFichas",evidencias:"viewEvidencias",ajustes:"viewAjustes"};
+  const map={catalog:"viewCatalog",detail:"viewDetail",admin:"viewAdmin",quiz:"viewQuiz",result:"viewResult",trainer:"viewTrainer",fichas:"viewFichas",evidencias:"viewEvidencias",ajustes:"viewAjustes",inicio:"viewInicio",dashboard:"viewDashboard"};
   if(map[name]) document.getElementById(map[name]).classList.remove("hidden");
   document.querySelectorAll(".sidebar__item").forEach(i=>i.classList.remove("active"));
-  if(name==="catalog"){document.getElementById("sideInicio")?.classList.add("active");document.getElementById("sideCursos")?.classList.add("active");}
+  if(name==="inicio"){document.getElementById("sideInicio")?.classList.add("active");}
+  if(name==="dashboard"){document.getElementById("sideDashboard")?.classList.add("active");}
+  if(name==="catalog"){document.getElementById("sideCursos")?.classList.add("active");}
   if(name==="admin"){document.getElementById("sideAdmin")?.classList.add("active");}
   if(name==="trainer"){document.getElementById("sideSesiones")?.classList.add("active");}
   if(name==="fichas"){document.getElementById("sideFichas")?.classList.add("active");}
@@ -96,6 +99,8 @@ function navigate(name) {
   if(name==="admin") renderAdmin();
   if(name==="evidencias") EVID.mostrar();
   if(name==="ajustes") AJUSTES.mostrar();
+  if(name==="inicio") renderInicio();
+  if(name==="dashboard") renderDashboardPantalla();
   window.scrollTo(0,0);
 }
 
@@ -106,6 +111,36 @@ function toast(msg){
   el.textContent=msg;el.classList.remove("hidden");
   if(_tt)clearTimeout(_tt);_tt=setTimeout(()=>el.classList.add("hidden"),2500);
 }
+
+// Pantalla de inicio: el personal ve su menú de botones; el guardia, directamente sus cursos
+function irInicio(){ navigate(esStaff() ? "inicio" : "catalog"); }
+
+const ROL_TEXTO = { admin: "Administración", maestro: "Capacitador", supervisor: "Supervisor" };
+function renderInicio(){
+  const root=document.getElementById("inicioRoot"); if(!root||!currentUser) return;
+  const rol=currentUser.role, cap=rol==="maestro"||rol==="admin", adm=rol==="admin";
+  const grandes=[
+    ["dashboard","📊","Dashboard","Avance y resultados de los guardias"],
+    ["catalog","📚","Cursos","Catálogo por módulos; presenta en el aula"],
+    ["evidencias","✅","Evidencias","Constancias y expedientes de capacitación"],
+  ];
+  const mas=[
+    cap&&["sesiones","👥","Sesiones","Clases con lista de asistencia"],
+    ["fichas","📄","Fichas técnicas","Documentos de consulta"],
+    adm&&["admin","🛠️","Administración","Usuarios, cursos y empleados"],
+    adm&&["ajustes","⚙️","Ajustes","Instructores y accesos"],
+  ].filter(Boolean);
+  const card=(c,g)=>`<button class="inicioCard${g?"":" inicioCard--chica"}" data-ir="${c[0]}"><span class="inicioIcono">${c[1]}</span><b>${c[2]}</b><small>${c[3]}</small></button>`;
+  root.innerHTML=`<div class="inicioSaludo"><h2>Hola, ${escHtml(currentUser.nombre||"")}</h2><p>${ROL_TEXTO[rol]||""} · Grupo IntSeg</p></div>
+    <div class="inicioGrid">${grandes.map(c=>card(c,true)).join("")}</div>
+    <div class="inicioMasT">También</div>
+    <div class="inicioGrid inicioGrid--chicas">${mas.map(c=>card(c,false)).join("")}</div>`;
+}
+document.getElementById("inicioRoot")?.addEventListener("click",e=>{
+  const b=e.target.closest("[data-ir]"); if(!b) return;
+  ({ dashboard:()=>navigate("dashboard"), catalog:()=>navigate("catalog"), evidencias:()=>navigate("evidencias"),
+     sesiones:()=>TR.mostrarLista(), fichas:()=>FICHAS.mostrarLista(), admin:()=>navigate("admin"), ajustes:()=>navigate("ajustes") })[b.dataset.ir]?.();
+});
 
 // ── Inicio de sesión ───────────────────────────────────────
 // Deja lista la sesión: avance propio y, si es personal, usuarios, avance de todos y empleados.
@@ -118,9 +153,7 @@ async function iniciarSesion(usuario, extra = {}) {
   if (esStaff()) registrarEvento("Inicio de sesión", `${currentUser.nombre} (${currentUser.user}, ${currentUser.role})`);
   renderCatalog();
   refreshCatalog();
-  if (currentUser.role === "maestro") TR.mostrarLista();
-  else if (currentUser.role === "supervisor") navigate("evidencias");
-  else navigate(currentUser.role === "admin" ? "admin" : "catalog");
+  irInicio();
 }
 
 function mostrarErrorLogin(msg, ms = 3500) {
@@ -321,7 +354,10 @@ function tarjetaCurso(k){
         <div class="courseCard__title">${escHtml(c.title)}</div>
         <div class="progressRow"><div class="progressText">Sin iniciar</div><div class="progressBar"><div class="progressBar__fill" style="width:0%"></div></div></div>
       </div>
-      <button class="btnNavy" data-go="detail" data-course="${escHtml(k)}">Ver</button>
+      <div class="courseCard__btns${esStaff()?" courseCard__btns--dos":""}">
+        <button class="btnNavy" data-go="detail" data-course="${escHtml(k)}">Ver</button>
+        ${esStaff()?`<button class="btnNavy btnNavy--claro" data-present="${escHtml(k)}" title="Proyectar en la segunda pantalla">▶ Presentar</button>`:""}
+      </div>
     </div>
   </article>`;
 }
@@ -341,8 +377,7 @@ function renderCatalog(){
   if(FILTRO_CAT.modulo!=="all"&&!grupos.includes(Number(FILTRO_CAT.modulo)))FILTRO_CAT.modulo="all";
   const cont=document.getElementById("chipsModulo");
   if(cont){
-    cont.innerHTML=[`<button class="chipM${FILTRO_CAT.modulo==="all"?" chipM--on":""}" data-mod="all">Todos los módulos</button>`,
-      ...grupos.map(id=>`<button class="chipM${String(FILTRO_CAT.modulo)===String(id)?" chipM--on":""}" data-mod="${id}">${id?escHtml(nombreModulo(id)):"Otros"}</button>`)].join("");
+    cont.innerHTML=grupos.map(id=>`<button class="chipM${String(FILTRO_CAT.modulo)===String(id)?" chipM--on":""}" data-mod="${id}" title="Clic para filtrar; otro clic para quitar el filtro">${id?escHtml(nombreModulo(id)):"Otros"}</button>`).join("");
   }
   aplicarFiltrosCatalogo();
 }
@@ -720,41 +755,44 @@ function getAdminProgress(username){
   return PROGRESO_TODOS[username] || {};
 }
 
-function renderAdminDashboard(){
+function renderAdminDashboard(){ pintarDashboard("adminStats","adminCourseStats"); }
+async function renderDashboardPantalla(){
+  await Promise.all([cargarUsuarios(), cargarProgresoTodos()]);
+  pintarDashboard("dashStats","dashCursos");
+}
+function pintarDashboard(statsId,cursosId){
   const keys=Object.keys(COURSE_CONTENT);
-  const allUsers=USUARIOS.filter(u=>u.role!=="admin"&&u.status==="activo");
+  const alumnos=USUARIOS.filter(u=>u.role==="guardia"&&u.status==="activo");
   let totalEvals=0,totalPassed=0,scores=[];
-  allUsers.forEach(u=>{
+  alumnos.forEach(u=>{
     const prog=getAdminProgress(u.user);
     keys.forEach(k=>{
       if(prog[k]){totalEvals++;if(prog[k].passed)totalPassed++;scores.push(prog[k].score);}
     });
   });
-  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length*10)/10:0;
+  const avg=scores.length?Math.round(scores.reduce((x,y)=>x+y,0)/scores.length*10)/10:0;
   const passRate=totalEvals?Math.round((totalPassed/totalEvals)*100):0;
-
-  document.getElementById("adminStats").innerHTML=`
-    <div class="statCard"><div class="statCard__n">${allUsers.length}</div><div class="statCard__l">Usuarios activos</div></div>
+  document.getElementById(statsId).innerHTML=`
+    <div class="statCard"><div class="statCard__n">${alumnos.length}</div><div class="statCard__l">Guardias activos</div></div>
     <div class="statCard"><div class="statCard__n">${keys.length}</div><div class="statCard__l">Cursos</div></div>
     <div class="statCard statCard--green"><div class="statCard__n">${totalPassed}</div><div class="statCard__l">Evaluaciones aprobadas</div></div>
     <div class="statCard statCard--orange"><div class="statCard__n">${passRate}%</div><div class="statCard__l">Tasa de aprobación</div></div>
     <div class="statCard"><div class="statCard__n">${avg}</div><div class="statCard__l">Promedio general</div></div>
     <div class="statCard"><div class="statCard__n">${totalEvals}</div><div class="statCard__l">Evaluaciones realizadas</div></div>
   `;
-
   let html="";
   keys.forEach(k=>{
     const c=COURSE_CONTENT[k];
     let passed=0;
-    allUsers.forEach(u=>{const p=getAdminProgress(u.user);if(p[k]?.passed)passed++;});
-    const pct=Math.round((passed/(allUsers.length||1))*100);
+    alumnos.forEach(u=>{const p=getAdminProgress(u.user);if(p[k]?.passed)passed++;});
+    const pct=Math.round((passed/(alumnos.length||1))*100);
     html+=`<div class="courseStatRow">
-      <div class="courseStatName">${c.title}</div>
+      <div class="courseStatName">${escHtml(c.title)}</div>
       <div class="courseStatBar"><div class="courseStatFill" style="width:${pct}%"></div></div>
-      <div class="courseStatPct">${passed}/${allUsers.length} aprobaron (${pct}%)</div>
+      <div class="courseStatPct">${passed}/${alumnos.length} aprobaron (${pct}%)</div>
     </div>`;
   });
-  document.getElementById("adminCourseStats").innerHTML=html;
+  document.getElementById(cursosId).innerHTML=html;
 }
 
 // ── Usuarios — Supabase (alta, edición y baja por Edge Function) ──
@@ -1064,6 +1102,7 @@ document.addEventListener("click",e=>{
 });
 document.getElementById("btnEval").addEventListener("click",startQuiz);
 document.getElementById("btnPresentar").addEventListener("click",()=>PRES.iniciar(currentCourseKey));
+document.getElementById("courseList").addEventListener("click",e=>{const b=e.target.closest("[data-present]");if(b)PRES.iniciar(b.dataset.present);});
 document.getElementById("btnNextQ").addEventListener("click",nextQuestion);
 document.getElementById("btnRetry").addEventListener("click",()=>{loadDetail(currentCourseKey);navigate("detail");});
 document.getElementById("btnLogin").addEventListener("click",doLogin);
@@ -1082,8 +1121,8 @@ document.getElementById("searchInput").addEventListener("input",function(){
 });
 document.getElementById("chipsModulo").addEventListener("click",e=>{
   const b=e.target.closest("[data-mod]");if(!b)return;
-  FILTRO_CAT.modulo=b.dataset.mod;
-  document.querySelectorAll("#chipsModulo .chipM").forEach(c=>c.classList.toggle("chipM--on",c===b));
+  FILTRO_CAT.modulo=String(FILTRO_CAT.modulo)===b.dataset.mod?"all":b.dataset.mod;   // segundo clic = quitar filtro
+  document.querySelectorAll("#chipsModulo .chipM").forEach(c=>c.classList.toggle("chipM--on",String(FILTRO_CAT.modulo)===c.dataset.mod));
   aplicarFiltrosCatalogo();
 });
 
