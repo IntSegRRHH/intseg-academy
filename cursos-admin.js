@@ -211,6 +211,23 @@ const CURSOS_ADMIN = (() => {
     $("cursoEditor").innerHTML = htmlEditor();
     window.scrollTo(0, y);
   }
+  // Tema oficial con el que sale este curso en la lista de asistencia (SPGIP-FO-050)
+  function htmlListaOficial(d) {
+    const auto = temaListaAuto(ED && ED.key), l = d.lista || {};
+    const sel = l.id || (String(l.tema || "").trim() ? "otro" : "");
+    return `<div class="ceListaOf">
+      <label class="editLabel">Lista de asistencia oficial <span class="ceNota">(${esc(LISTA_CODIGO)}: tema y objetivos que salen impresos)</span></label>
+      <select class="editInput" data-lista-sel>
+        <option value="">— Automático${auto ? ": " + esc(auto.nombre) : " (usa el nombre del curso)"} —</option>
+        ${LISTA_TEMAS.map((t) => `<option value="${t.id}" ${sel === t.id ? "selected" : ""}>${esc(t.nombre)}</option>`).join("")}
+        <option value="otro" ${sel === "otro" ? "selected" : ""}>Personalizado…</option>
+      </select>
+      <div class="ceListaCampos ${sel ? "" : "hidden"}" id="ceListaCampos">
+        <label class="editLabel">Tema</label><textarea class="editTextarea" rows="2" data-p="datos.lista.tema">${esc(l.tema || "")}</textarea>
+        <label class="editLabel">Objetivos</label><textarea class="editTextarea" rows="3" data-p="datos.lista.objetivos">${esc(l.objetivos || "")}</textarea>
+      </div>
+    </div>`;
+  }
   function htmlEditor() {
     const d = ED.datos;
     const nv = d.modules.reduce((n, m) => n + (m.video ? 1 : 0), 0);
@@ -228,6 +245,7 @@ const CURSOS_ADMIN = (() => {
         <div><label class="editLabel">Vigencia de la constancia (meses)</label><input class="editInput" type="number" min="1" max="60" data-num data-p="datos.vigenciaMeses" value="${esc(d.vigenciaMeses ?? 12)}"/></div>
       </div>
       <label class="editLabel">Descripción</label><textarea class="editTextarea" rows="3" data-p="datos.desc" placeholder="De qué trata el curso (1 o 2 líneas)">${esc(d.desc)}</textarea>
+      ${htmlListaOficial(d)}
       <div class="ceDos">
         <div><label class="editLabel">Portada</label>${d.img ? `<img class="cePortada" src="${esc(d.img)}" alt=""/>` : `<div class="ceVacio">Sin portada</div>`}
           <label class="ceArchivo">${d.img ? "Cambiar portada" : "+ Subir portada"}<input type="file" accept="image/*" data-file="portada"/></label></div>
@@ -346,6 +364,7 @@ const CURSOS_ADMIN = (() => {
     }
     const datos = { modulo: Number(d.modulo) || 0, badge: d.badge.trim() || "Curso", title: d.title.trim(), duration: d.duration.trim(),
       vigenciaMeses: Number(d.vigenciaMeses) || 12, img: d.img || "", pdf: d.pdf || "", desc: d.desc.trim(), modules };
+    if (d.lista && String(d.lista.tema || "").trim()) datos.lista = { id: d.lista.id || "", tema: String(d.lista.tema).trim(), objetivos: String(d.lista.objetivos || "").trim() };
     return { errores, datos, quiz };
   }
   async function guardar(publicar) {
@@ -506,6 +525,14 @@ const CURSOS_ADMIN = (() => {
     if (!ed || ed.dataset.listo) return; ed.dataset.listo = "1";
     const entrada = (ev) => {
       const t = ev.target;
+      if (t.dataset.listaSel !== undefined && ED) {
+        const campos = $("ceListaCampos"), v = t.value, oficial = temaListaPorId(v);
+        if (!v) { delete ED.datos.lista; campos.classList.add("hidden"); return; }
+        ED.datos.lista = oficial ? { id: oficial.id, tema: oficial.tema, objetivos: oficial.objetivos } : { id: "", tema: (ED.datos.lista && ED.datos.lista.tema) || "", objetivos: (ED.datos.lista && ED.datos.lista.objetivos) || "" };
+        campos.querySelector('[data-p="datos.lista.tema"]').value = ED.datos.lista.tema;
+        campos.querySelector('[data-p="datos.lista.objetivos"]').value = ED.datos.lista.objetivos;
+        campos.classList.remove("hidden"); return;
+      }
       if (!t.dataset.p || !ED) return;
       if (t.type === "radio" && ev.type !== "change") return;
       set(t.dataset.p, t.dataset.num !== undefined ? Number(t.value) : t.value);

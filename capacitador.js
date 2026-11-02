@@ -107,6 +107,8 @@ const TR = (() => {
       capacitador: (() => { const s = document.getElementById("nsInstructor"); return s ? s.options[s.selectedIndex].text : (currentUser?.nombre || ""); })(),
       capacitadorUser: currentUser?.user || "",
       estado: "abierta",
+      columnaBotas: false,
+      lista: null,
       participantes: [],
       fotos: [],
       creada: new Date().toISOString(),
@@ -170,7 +172,10 @@ const TR = (() => {
           .map(
             (p, i) => `<div class="trFila ${p.presente ? "" : "trFila--ausente"}">
               <span class="trFila__i">${i + 1}</span>
-              <div class="trFila__nombre"><b>${esc(p.nombre)}</b><small>No. ${esc(p.numEmpleado || "—")}</small></div>
+              <div class="trFila__nombre"><b>${esc(p.nombre)}</b><small>No. ${esc(p.numEmpleado || "—")} · ${esc(p.servicio || "sin servicio")} · ${esc(p.puesto || "Guardia")}</small></div>
+              ${s.columnaBotas ? `<button class="trMini ${p.botas === false ? "" : "trMini--on"}" data-botas="${p.id}" ${cerrada() ? "disabled" : ""} title="Revisión de botas">Botas: ${p.botas === false ? "No" : "Sí"}</button>` : ""}
+              <button class="trMini ${p.enLinea ? "trMini--on" : ""}" data-enlinea="${p.id}" ${cerrada() ? "disabled" : ""} title="Marcar si tomó la capacitación en línea (en la firma sale &quot;En línea&quot;)">En línea</button>
+              ${cerrada() ? "" : `<button class="trIcono" data-editarp="${p.id}" aria-label="Editar servicio y puesto de ${esc(p.nombre)}" title="Editar servicio y puesto">${ICON.edit || "✎"}</button>`}
               <button class="trToggle ${p.presente ? "trToggle--on" : ""}" data-presente="${p.id}" ${cerrada() ? "disabled" : ""}>${p.presente ? "Presente" : "Ausente"}</button>
               ${cerrada() ? "" : `<button class="trIcono" data-quitar="${p.id}" aria-label="Quitar a ${esc(p.nombre)}">${ICON.del}</button>`}
             </div>`
@@ -182,8 +187,10 @@ const TR = (() => {
         <input class="editInput" id="paNum" placeholder="No. empleado" inputmode="numeric" title="Teclea el número y presiona Enter: el nombre aparece solo"/>
         <input class="editInput" id="paNombre" placeholder="Nombre completo" list="paSug"/>
         <datalist id="paSug">${sugerencias}</datalist>
+        <input class="editInput" id="paServicio" placeholder="Servicio / cliente" title="Servicio donde labora; sale en la lista de asistencia"/>
         <button class="btnPrimary" data-tr="agregar">Agregar</button>
       </div>`}
+      <label class="trCheckBotas"><input type="checkbox" id="trBotas" ${s.columnaBotas ? "checked" : ""} ${cerrada() ? "disabled" : ""}/> Incluir la columna «Botas» (revisión de calzado) en la lista de asistencia</label>
       <div class="trResumen">${presentes(s).length} presentes de ${s.participantes.length} registrados</div>
       <div class="trLista">${filas}</div>`;
   }
@@ -202,7 +209,7 @@ const TR = (() => {
       toast("Ese número de empleado ya está en la lista");
       return;
     }
-    sesion.participantes.push({ id: DB.nuevoId("p"), numEmpleado, nombre, presente: true, calificacion: null, origen: null });
+    sesion.participantes.push({ id: DB.nuevoId("p"), numEmpleado, nombre, servicio: (document.getElementById("paServicio")?.value || "").trim(), puesto: "Guardia", enLinea: false, botas: true, presente: true, calificacion: null, origen: null });
     await guardar();
     render();
   }
@@ -215,6 +222,7 @@ const TR = (() => {
     const emp = await EMPLEADOS.buscar(num);
     if (emp) {
       nom.value = emp.nombre;
+      const sv = document.getElementById("paServicio"); if (sv && !sv.value.trim()) sv.value = emp.area || "";   // el área del directorio sale como servicio
       agregar();
     } else {
       toast("Número no encontrado. Escribe el nombre a mano.");
@@ -326,9 +334,12 @@ const TR = (() => {
       <div class="trChecks">${checks.map(([ok, t]) => `<div class="trCheck ${ok ? "trCheck--ok" : ""}">${ok ? "✓" : "•"} ${t}</div>`).join("")}</div>
       <div class="trSub">Fotos</div>
       <div class="trFotos">${fotos}${cerrada() ? "" : `<button class="trFotoAdd" data-tr="foto">${ICON.cam}<span>Tomar foto</span></button>`}</div>
+      <div class="trSub">Datos de la lista de asistencia <span class="trCodigo">${LISTA_CODIGO}</span></div>
+      ${panelLista()}
       <div class="trSub">Documentos</div>
       <div class="trAcciones">
-        <button class="btnNavy" data-tr="imprimir">Lista de asistencia y resultados</button>
+        <button class="btnNavy" data-tr="oficial">Lista de asistencia (formato oficial)</button>
+        <button class="btnSecondaryWide trAccion" data-tr="imprimir">Resultados y evidencia fotográfica</button>
         <button class="btnSecondaryWide trAccion" data-tr="csv">Exportar CSV</button>
       </div>
       ${
@@ -390,7 +401,74 @@ const TR = (() => {
     mostrarLista();
   }
 
-  // Documento imprimible (se guarda como PDF desde el diálogo de impresión)
+  // Datos del formato oficial: salen del curso, y se pueden ajustar para esta sesión
+  function datosLista(s) {
+    const base = listaDelCurso(s.cursoKey), l = s.lista || {};
+    return {
+      tema: l.tema ?? base.tema, objetivos: l.objetivos ?? base.objetivos, observaciones: l.observaciones ?? "",
+      responsable: l.responsable ?? s.capacitador, puesto: l.puesto ?? LISTA_AREA,
+    };
+  }
+  function panelLista() {
+    const d = datosLista(sesion), dis = cerrada() ? "disabled" : "";
+    return `<div class="trLista2">
+      <label class="editLabel">Tema</label><textarea class="editTextarea" rows="2" data-lista="tema" ${dis}>${esc(d.tema)}</textarea>
+      <label class="editLabel">Objetivos</label><textarea class="editTextarea" rows="3" data-lista="objetivos" ${dis}>${esc(d.objetivos)}</textarea>
+      <label class="editLabel">Observaciones</label><textarea class="editTextarea" rows="2" data-lista="observaciones" placeholder="Opcional" ${dis}>${esc(d.observaciones)}</textarea>
+      <div class="trDos"><div><label class="editLabel">Responsable (nombre)</label><input class="editInput" data-lista="responsable" value="${esc(d.responsable)}" ${dis}/></div>
+      <div><label class="editLabel">Responsable (puesto)</label><input class="editInput" data-lista="puesto" value="${esc(d.puesto)}" ${dis}/></div></div>
+    </div>`;
+  }
+
+  // Lista de asistencia en el formato oficial SPGIP-FO-050 (una hoja por cada 20 participantes)
+  function imprimirOficial() {
+    const s = sesion, d = datosLista(s);
+    const lista = s.participantes.filter((p) => p.presente);
+    if (!lista.length) { toast("Registra al menos un participante presente"); return; }
+    const hojas = []; for (let i = 0; i < lista.length; i += LISTA_FILAS_POR_HOJA) hojas.push(lista.slice(i, i + LISTA_FILAS_POR_HOJA));
+    const botas = !!s.columnaBotas, col = botas ? 5 : 4;
+    const lineas = (t) => esc(t).replace(/\n/g, "<br/>");
+    const obs = String(d.observaciones || "").trim();
+    const hoja = (grupo) => {
+      const filas = grupo.map((p) => `<tr>${botas ? `<td class="c">${p.botas === false ? "No" : "Si"}</td>` : ""}<td>${esc(p.nombre)}</td><td>${esc(p.servicio || "")}</td><td>${esc(p.puesto || "Guardia")}</td><td class="c">${p.enLinea ? "En línea" : ""}</td></tr>`);
+      while (filas.length < LISTA_FILAS_POR_HOJA) filas.push(`<tr>${botas ? "<td></td>" : ""}<td></td><td></td><td></td><td></td></tr>`);
+      return `<section class="fo">
+        <div class="fo__titulo"><span>LISTA DE ASISTENCIA</span></div>
+        <div class="fo__datos">
+          <span class="fo__et">FECHA</span><span class="fo__caja fo__caja--fecha">${esc(fechaLarga(s.fecha))}</span>
+          <span class="fo__et">EMPRESA</span><span class="fo__caja">${esc(LISTA_EMPRESA)}</span>
+          <span class="fo__et">ÁREA</span><span class="fo__caja fo__caja--area">${esc(LISTA_AREA)}</span>
+        </div>
+        <div class="fo__tema"><span class="fo__et">TEMA:</span><div class="fo__temaCaja">${lineas(d.tema)}</div></div>
+        <div class="fo__obj"><span class="fo__et">OBJETIVOS</span><div class="fo__objTexto">${lineas(d.objetivos)}</div></div>
+        <table class="fo__tabla">
+          <thead><tr><th colspan="${col}" class="fo__banda">A&nbsp; S&nbsp; I&nbsp; S&nbsp; T&nbsp; E&nbsp; N&nbsp; C&nbsp; I&nbsp; A</th></tr>
+            <tr class="fo__cols">${botas ? "<th>Botas</th>" : ""}<th>NOMBRE</th><th>SERVICIO</th><th>PUESTO</th><th>FIRMA</th></tr></thead>
+          <tbody>${filas.join("")}</tbody>
+        </table>
+        <table class="fo__pie">
+          <tr><th>OBSERVACIONES</th><th colspan="2">RESPONSABLE</th></tr>
+          <tr><td rowspan="3" class="fo__obs">${obs ? lineas(obs) : ""}</td><td class="fo__lbl">NOMBRE:</td><td class="fo__val">${esc(d.responsable)}</td></tr>
+          <tr><td class="fo__lbl">PUESTO:</td><td class="fo__val">${esc(d.puesto)}</td></tr>
+          <tr><td class="fo__lbl">FIRMA:</td><td class="fo__val"></td></tr>
+        </table>
+        <div class="fo__codigo">${esc(LISTA_CODIGO)}</div>
+      </section>`;
+    };
+    document.getElementById("printArea").innerHTML = hojas.map(hoja).join("");
+    imprimirConPagina("oficial");
+  }
+  // La hoja oficial lleva sus propios márgenes (los del documento original de Word)
+  function imprimirConPagina(tipo) {
+    const st = document.createElement("style"); st.id = "pageOficial";
+    st.textContent = tipo === "oficial" ? "@page{size:letter;margin:20mm 14mm 14mm 17mm;}" : "";
+    document.head.appendChild(st);
+    const quitar = () => { document.getElementById("pageOficial")?.remove(); window.removeEventListener("afterprint", quitar); };
+    window.addEventListener("afterprint", quitar);
+    setTimeout(() => window.print(), 150);
+  }
+
+  // Resultados y evidencia (se guarda como PDF desde el diálogo de impresión)
   function imprimir() {
     const s = sesion;
     const filas = s.participantes
@@ -424,11 +502,11 @@ const TR = (() => {
 
   function exportarCSV() {
     const s = sesion;
-    const enc = ["fecha", "curso", "sede", "lugar", "capacitador", "num_empleado", "nombre", "asistencia", "calificacion", "resultado", "origen"];
+    const enc = ["fecha", "curso", "sede", "lugar", "capacitador", "num_empleado", "nombre", "asistencia", "calificacion", "resultado", "origen", "servicio", "puesto", "en_linea"];
     const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const filas = s.participantes.map((p) => {
       const tiene = p.presente && p.calificacion !== null && p.calificacion !== "";
-      return [s.fecha, s.cursoTitulo, s.sede, s.lugar, s.capacitador, p.numEmpleado, p.nombre, p.presente ? "presente" : "ausente", tiene ? p.calificacion : "", tiene ? (aprobado(p) ? "aprobado" : "no aprobado") : "", p.origen || ""].map(q).join(",");
+      return [s.fecha, s.cursoTitulo, s.sede, s.lugar, s.capacitador, p.numEmpleado, p.nombre, p.presente ? "presente" : "ausente", tiene ? p.calificacion : "", tiene ? (aprobado(p) ? "aprobado" : "no aprobado") : "", p.origen || "", p.servicio || "", p.puesto || "Guardia", p.enLinea ? "si" : "no"].map(q).join(",");
     });
     const csv = "\ufeff" + [enc.join(","), ...filas].join("\r\n");
     const a = document.createElement("a");
@@ -440,6 +518,12 @@ const TR = (() => {
   }
 
   // ── Eventos ───────────────────────────────────────────────
+  document.addEventListener("change", async (e) => {
+    if (!sesion || !e.target.closest("#viewTrainer")) return;
+    if (e.target.id === "trBotas") { sesion.columnaBotas = e.target.checked; await guardar(); render(); return; }
+    const k = e.target.dataset?.lista;
+    if (k) { sesion.lista = { ...(sesion.lista || datosLista(sesion)), [k]: e.target.value }; await guardar(); }
+  });
   document.addEventListener("click", async (e) => {
     if (!e.target.closest("#viewTrainer")) return;
     const t = (sel) => e.target.closest(sel);
@@ -452,6 +536,7 @@ const TR = (() => {
       else if (a === "agregar") agregar();
       else if (a === "foto") pedirFoto();
       else if (a === "imprimir") imprimir();
+      else if (a === "oficial") imprimirOficial();
       else if (a === "csv") exportarCSV();
       else if (a === "cerrar") cerrar();
       else if (a === "eliminar") eliminar();
@@ -464,6 +549,15 @@ const TR = (() => {
       p.presente = !p.presente;
       await guardar();
       render();
+    } else if ((el = t("[data-enlinea]"))) {
+      const p = sesion.participantes.find((x) => x.id === el.dataset.enlinea); p.enLinea = !p.enLinea; await guardar(); render();
+    } else if ((el = t("[data-botas]"))) {
+      const p = sesion.participantes.find((x) => x.id === el.dataset.botas); p.botas = p.botas === false; await guardar(); render();
+    } else if ((el = t("[data-editarp]"))) {
+      const p = sesion.participantes.find((x) => x.id === el.dataset.editarp);
+      const sv = prompt(`Servicio de ${p.nombre}:`, p.servicio || ""); if (sv === null) return;
+      const pu = prompt(`Puesto de ${p.nombre}:`, p.puesto || "Guardia"); if (pu === null) return;
+      p.servicio = sv.trim(); p.puesto = pu.trim() || "Guardia"; await guardar(); render();
     } else if ((el = t("[data-quitar]"))) {
       const p = sesion.participantes.find((x) => x.id === el.dataset.quitar);
       if (!confirm(`¿Quitar a ${p.nombre} de la lista?`)) return;

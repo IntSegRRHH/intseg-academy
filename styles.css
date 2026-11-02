@@ -861,3 +861,39 @@ body.rol-staff .progressRow{display:none;}
   #viewDashboard .page-content{max-width:1500px;padding:28px 48px 48px;}
   #viewDashboard .statsGrid{grid-template-columns:repeat(6,minmax(0,1fr));gap:16px;}
 }
+
+/* ── Lista de asistencia oficial (SPGIP-FO-050) ── */
+.trMini{border:1px solid #d6cdea;background:#fff;color:#6b7280;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.trMini--on{background:#332b4e;color:#fff;border-color:#332b4e;}
+.trCheckBotas{display:flex;gap:8px;align-items:center;font-size:13px;color:#4b5563;margin:8px 0;}
+.trCodigo{display:inline-block;margin-left:8px;font-size:11px;font-weight:700;background:#ede9f7;color:#4c3a82;border-radius:6px;padding:2px 8px;}
+.trLista2 .editTextarea{width:100%;} .trDos{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.trAlta{flex-wrap:wrap;}
+@media print{
+  #printArea .fo{page-break-after:always;font-family:Arial,Helvetica,sans-serif;color:#000;font-size:9.5pt;position:relative;height:236mm;overflow:hidden;}
+  #printArea .fo:last-child{page-break-after:auto;}
+  .fo__titulo{display:flex;justify-content:center;margin:4mm 0 11mm;}
+  .fo__titulo span{display:inline-block;min-width:62mm;text-align:center;font-weight:700;font-size:13pt;padding:2.6mm 10mm;background:#c0c0c0;border:.5mm solid #000;border-right-width:1.4mm;border-bottom-width:1.4mm;}
+  .fo__datos{display:flex;align-items:center;gap:3mm;margin-bottom:5mm;font-size:9.5pt;}
+  .fo__et{font-size:9.5pt;}
+  .fo__caja{border:.3mm solid #000;padding:.6mm 2mm;min-width:30mm;display:inline-block;} .fo__caja--fecha{min-width:42mm;} .fo__caja--area{min-width:46mm;margin-right:0;}
+  .fo__datos .fo__et:nth-of-type(n+2){margin-left:5mm;}
+  .fo__tema{display:flex;align-items:center;gap:6mm;margin-bottom:5mm;} .fo__tema .fo__et{width:21mm;}
+  .fo__temaCaja{flex:1;border:.3mm solid #000;padding:3mm;min-height:10mm;display:flex;align-items:center;}
+  .fo__obj{display:flex;gap:5mm;margin-bottom:6mm;} .fo__obj .fo__et{width:22mm;flex:none;}
+  .fo__objTexto{flex:1;line-height:5.2mm;min-height:15.6mm;background-image:repeating-linear-gradient(transparent 0,transparent 4.8mm,#000 4.8mm,#000 5.2mm);background-size:100% 5.2mm;text-decoration:none;}
+  .fo__tabla,.fo__pie{width:100%;border-collapse:collapse;}
+  .fo__tabla{margin-bottom:5mm;border:.5mm solid #000;border-left-width:.9mm;border-bottom-width:.9mm;}
+  .fo__tabla td{font-family:Calibri,Carlito,Arial,sans-serif;font-size:9pt;}
+  .fo__tabla th,.fo__tabla td{border:.25mm solid #000;padding:0 1.6mm;height:4.9mm;font-size:8.5pt;vertical-align:middle;}
+  .fo__banda{background:#c0c0c0;font-size:11pt;font-weight:700;letter-spacing:.9mm;height:6mm;border-bottom:.4mm solid #000;}
+  .fo__cols th{background:#c0c0c0;font-weight:400;font-size:8.5pt;text-align:center;}
+  .fo__tabla td.c{text-align:center;}
+  .fo__pie{border:.5mm solid #000;border-left-width:.9mm;border-bottom-width:.9mm;margin-top:3mm;} .fo__pie th{font-weight:400;font-size:10pt;padding:1.2mm;border:.25mm solid #000;}
+  .fo__pie td{border:.25mm solid #000;height:8.5mm;padding:0 2mm;font-size:9.5pt;vertical-align:bottom;}
+  .fo__obs{width:48%;height:25.5mm;vertical-align:top!important;line-height:8.5mm;padding:0 2mm!important;background-image:repeating-linear-gradient(transparent 0,transparent 8.1mm,#000 8.1mm,#000 8.5mm);background-size:100% 8.5mm;}
+  .fo__lbl{width:19%;border-right:0!important;border-bottom:0!important;vertical-align:middle!important;} .fo__val{text-align:center;border-left:0!important;}
+  .fo__codigo{position:absolute;left:0;right:0;bottom:2mm;text-align:center;font-size:10pt;}
+}
+.ceListaOf{margin-top:6px;padding:12px;border:1px dashed #d6cdea;border-radius:12px;background:#faf8fd;}
+.ceListaOf .editTextarea{width:100%;}
