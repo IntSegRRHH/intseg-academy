@@ -14,12 +14,6 @@ async function cargarInstructores() {
   INSTRUCTORES = error ? [] : (data || []);
 }
 
-// Instructor de un curso: por id y, en cursos anteriores a esta lista, por coincidencia de nombre
-const instructorDe = (c) =>
-  INSTRUCTORES.find((i) => c?.instructorId && i.id === c.instructorId) ||
-  INSTRUCTORES.find((i) => String(c?.instructor || "").trim() && i.nombre.trim().toLowerCase() === String(c.instructor).trim().toLowerCase()) ||
-  null;
-
 const AJUSTES = (() => {
   const $ = (id) => document.getElementById(id);
   const esc = escHtml;
@@ -37,30 +31,15 @@ const AJUSTES = (() => {
     pintar();
   }
 
-  const nCursos = (i) => Object.values(COURSE_CONTENT).filter((c) => (c.instructorId ? c.instructorId === i.id : String(c.instructor || "").trim().toLowerCase() === i.nombre.trim().toLowerCase())).length;
   const iniciales = (n) => n.trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
-
-  function nombresEnCursos() {
-    const ya = new Set(INSTRUCTORES.map((i) => i.nombre.trim().toLowerCase()));
-    const vistos = new Map();
-    Object.values(COURSE_CONTENT).forEach((c) => {
-      const n = String(c.instructor || "").trim();
-      if (n && !ya.has(n.toLowerCase())) vistos.set(n.toLowerCase(), n);
-    });
-    return [...vistos.values()];
-  }
 
   function pintar() {
     const root = $("ajustesRoot"); if (!root) return;
-    const sugeridos = nombresEnCursos();
-    const aviso = sugeridos.length
-      ? `<div class="ceAviso">Los cursos actuales mencionan a: <b>${sugeridos.map(esc).join(", ")}</b>. <button class="btnPrimary" data-aj="importar">Agregar a la lista</button></div>` : "";
     const filas = INSTRUCTORES.map((i) => {
-      const n = nCursos(i);
       return `<div class="ajFila ${i.activo ? "" : "ajFila--off"}">
         ${i.foto ? `<img class="ajAvatar" src="${esc(i.foto)}" alt=""/>` : `<div class="ajAvatar ajAvatar--ini">${esc(iniciales(i.nombre))}</div>`}
         <div class="ajFila__main"><div class="ajFila__n">${esc(i.nombre)}</div>
-          <div class="ajFila__s">${esc(i.puesto || "Instructor")} · ${n} curso${n === 1 ? "" : "s"}</div>
+          <div class="ajFila__s">${esc(i.puesto || "Instructor")}</div>
           ${esAdmin() ? (PERFILES[i.perfil_id] ? `<div class="ajAcc ajAcc--ok">🔑 Usuario: <b>${esc(PERFILES[i.perfil_id].numero_empleado)}</b></div>` : `<div class="ajAcc ajAcc--no">Sin acceso a la plataforma</div>`) : ""}</div>
         <span class="statusPill ${i.activo ? "statusPill--active" : "statusPill--inactive"}">${i.activo ? "Activo" : "Inactivo"}</span>
         <div class="actionBtns">
@@ -72,9 +51,8 @@ const AJUSTES = (() => {
     root.innerHTML = `
       <div class="ajCard">
         <div class="ajCard__cab"><div><h3>Instructores</h3>
-          <p class="ceNota">Quienes imparten los cursos. Cada curso y cada sesión de aula eligen a su instructor de esta lista.</p></div>
+          <p class="ceNota">Quienes dan las clases. Cada sesión de aula registra a su instructor, que se elige de esta lista.</p></div>
           <button class="btnPrimary" data-aj="nuevo">+ Agregar instructor</button></div>
-        ${aviso}
         ${filas || `<div class="emptyState">Aún no hay instructores. Agrega el primero.</div>`}
       </div>`;
   }
@@ -210,8 +188,8 @@ const AJUSTES = (() => {
   }
   async function borrar(id) {
     const i = INSTRUCTORES.find((x) => x.id === id); if (!i) return;
-    const n = nCursos(i); const p = PERFILES[i.perfil_id]; const cuenta = esAdmin() && p && p.rol === "maestro";
-    if (!confirm(`¿Eliminar a ${i.nombre}?${cuenta ? ` También se elimina su acceso (usuario ${p.numero_empleado}).` : ""}${n ? ` Está en ${n} curso${n === 1 ? "" : "s"}; seguirán mostrando su nombre, pero sin su foto.` : ""}`)) return;
+    const p = PERFILES[i.perfil_id]; const cuenta = esAdmin() && p && p.rol === "maestro";
+    if (!confirm(`¿Eliminar a ${i.nombre}?${cuenta ? ` También se elimina su acceso (usuario ${p.numero_empleado}).` : ""}`)) return;
     try {
       const { error } = await sb.from("instructores").delete().eq("id", id);
       if (error) throw new Error(error.message);
@@ -219,19 +197,11 @@ const AJUSTES = (() => {
       await mostrar(); toast("🗑️ Instructor eliminado");
     } catch (e) { toast("No se pudo eliminar: " + e.message); }
   }
-  async function importar() {
-    const filas = nombresEnCursos().map((n) => ({ nombre: n, puesto: "Instructor", activo: true }));
-    if (!filas.length) return;
-    const { error } = await sb.from("instructores").insert(filas);
-    if (error) { toast("No se pudo agregar: " + error.message); return; }
-    await cargarInstructores(); pintar(); toast("✅ Instructores agregados");
-  }
-
   function enlazar() {
     const root = $("ajustesRoot"); if (!root || root.dataset.listo) return; root.dataset.listo = "1";
     root.addEventListener("click", (ev) => {
       const b = ev.target.closest("[data-aj]"); if (!b) return;
-      ({ nuevo: () => abrir(null), editar: () => abrir(b.dataset.id), activo: () => alternar(b.dataset.id), borrar: () => borrar(b.dataset.id), importar })[b.dataset.aj]?.();
+      ({ nuevo: () => abrir(null), editar: () => abrir(b.dataset.id), activo: () => alternar(b.dataset.id), borrar: () => borrar(b.dataset.id) })[b.dataset.aj]?.();
     });
     $("insCrear").addEventListener("change", (e) => {
       $("insCampos").classList.toggle("hidden", !e.target.checked);

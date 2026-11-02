@@ -584,11 +584,9 @@ function loadDetail(key){
   const c=COURSE_CONTENT[key];if(!c)return;
   document.getElementById("detBadge").textContent=c.badge;
   document.getElementById("detTitle").textContent=c.title;
-  const ins=instructorDe(c);
-  document.getElementById("detInstructor").textContent=ins?ins.nombre:c.instructor;
   document.getElementById("detDuration").textContent=c.duration;
   document.getElementById("detDesc").textContent=c.desc;
-  const img=document.querySelector("#detAvatar img");if(img)img.src=(ins&&ins.foto)||c.img;
+  const img=document.querySelector("#detAvatar img");if(img)img.src=c.img;
 
   // Botón PDF
   const pdfBtn = document.getElementById("btnVerPDF");
@@ -1065,6 +1063,7 @@ document.addEventListener("click",e=>{
   if(e.target===document.getElementById("modalCurso")) closeEditModal();
 });
 document.getElementById("btnEval").addEventListener("click",startQuiz);
+document.getElementById("btnPresentar").addEventListener("click",()=>PRES.iniciar(currentCourseKey));
 document.getElementById("btnNextQ").addEventListener("click",nextQuestion);
 document.getElementById("btnRetry").addEventListener("click",()=>{loadDetail(currentCourseKey);navigate("detail");});
 document.getElementById("btnLogin").addEventListener("click",doLogin);

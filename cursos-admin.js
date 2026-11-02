@@ -136,6 +136,21 @@ const CURSOS_ADMIN = (() => {
     const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(bmp, 0, 0, c.width, c.height);
     return new Promise((r) => c.toBlob((b) => r(b || file), "image/jpeg", 0.85));
   }
+  // Archivos que el curso ya no usa (video reemplazado, imagen quitada…): se borran del almacenamiento
+  // solo cuando el curso se guarda, para no romper el curso publicado si se cancela la edición.
+  const rutaPropia = (url) => {
+    if (!url) return null;
+    const base = sb.storage.from("cursos").getPublicUrl("").data.publicUrl;
+    return base && String(url).startsWith(base) ? decodeURIComponent(String(url).slice(base.length)) : null;
+  };
+  const huerfano = (url) => { const r = rutaPropia(url); if (r && ED) (ED.huerfanos = ED.huerfanos || new Set()).add(r); };
+  async function limpiarHuerfanos(datosGuardados) {
+    if (!ED || !ED.huerfanos || !ED.huerfanos.size) return;
+    const usado = JSON.stringify(datosGuardados);
+    const borrar = [...ED.huerfanos].filter((r) => !usado.includes(encodeURI(r)) && !usado.includes(r));
+    ED.huerfanos = new Set();
+    if (borrar.length) { try { await sb.storage.from("cursos").remove(borrar); } catch (e) { console.warn("limpieza:", e.message); } }
+  }
   const get = (path) => path.split(".").reduce((o, k) => (o == null ? o : o[k]), ED);
   function set(path, valor) {
     const ks = path.split("."); const ult = ks.pop();
@@ -168,7 +183,7 @@ const CURSOS_ADMIN = (() => {
         <div class="ceFila__main"><div class="ceFila__t">${esc(c.title)}</div>
           <div class="ceFila__s"><span class="ceMod${CURSOS.modulo(k) ? "" : " ceMod--no"}">${esc(nombreModulo(CURSOS.modulo(k)))}</span> ${esc(c.badge)} · ${pl(c.modules.length, "tema", "temas")} · ${pl(nq, "pregunta", "preguntas")}${vids ? ` · ${vids} video${vids > 1 ? "s" : ""}` : ""}</div></div>
         <span class="statusPill ${pub ? "statusPill--active" : "statusPill--inactive"}">${pub ? "Publicado" : "Borrador"}</span>
-        <div class="actionBtns"><button class="btnAction" title="Ver el curso (videos y diapositivas)" data-ca="ver" data-k="${esc(k)}">👁️</button>${acciones}</div>
+        <div class="actionBtns"><button class="btnAction" title="Ver el curso (videos y diapositivas)" data-ca="ver" data-k="${esc(k)}">👁️</button><button class="btnAction" title="Presentar en pantalla (segunda pantalla, con notas)" data-ca="presentar" data-k="${esc(k)}">▶️</button>${acciones}</div>
       </div>`;
     }).join("");
     cont.innerHTML = `${aviso}
@@ -185,7 +200,7 @@ const CURSOS_ADMIN = (() => {
       ED.datos.modules.forEach((m) => { if (m.video?.preguntas) m.video.preguntas = m.video.preguntas.map(rellenar); });
     } else {
       ED = { key: "c" + Date.now().toString(36), nuevo: true, publicado: false, orden: CURSOS.maxOrden() + 10,
-        datos: { modulo: 0, badge: "", title: "", instructor: INSTRUCTORES.length ? "" : (currentUser?.nombre || ""), instructorId: "", duration: "", vigenciaMeses: 12, img: "", pdf: "", desc: "", modules: [{ title: "", items: [] }] },
+        datos: { modulo: 0, badge: "", title: "", duration: "", vigenciaMeses: 12, img: "", pdf: "", desc: "", modules: [{ title: "", items: [] }] },
         quiz: [] };
     }
     $("cursosLista").classList.add("hidden"); $("cursoEditor").classList.remove("hidden");
@@ -195,13 +210,6 @@ const CURSOS_ADMIN = (() => {
     const y = window.scrollY;
     $("cursoEditor").innerHTML = htmlEditor();
     window.scrollTo(0, y);
-  }
-  function htmlInstructor(d) {
-    const actual = instructorDe(d);
-    const lista = INSTRUCTORES.filter((i) => i.activo || (actual && i.id === actual.id));
-    if (!lista.length) return `<input class="editInput" data-p="datos.instructor" value="${esc(d.instructor)}" placeholder="Nombre del instructor"/><span class="ceNota">Agrega instructores en Ajustes para elegirlos de una lista.</span>`;
-    const suelto = d.instructor && !actual ? `<option value="__txt" selected>${esc(d.instructor)} (no está en la lista)</option>` : "";
-    return `<select class="editInput" data-instr><option value="">— Elige al instructor —</option>${suelto}${lista.map((i) => `<option value="${esc(i.id)}" ${actual && i.id === actual.id ? "selected" : ""}>${esc(i.nombre)}</option>`).join("")}</select><span class="ceNota">Se administran en Ajustes → Instructores.</span>`;
   }
   function htmlEditor() {
     const d = ED.datos;
@@ -216,7 +224,6 @@ const CURSOS_ADMIN = (() => {
         <div><label class="editLabel">Módulo</label><select class="editInput" data-num data-p="datos.modulo">
           <option value="0">— Elige el módulo —</option>${MODULOS.map((m) => `<option value="${m.id}" ${Number(d.modulo) === m.id ? "selected" : ""}>${esc(nombreModulo(m.id))}</option>`).join("")}</select></div>
         <div><label class="editLabel">Categoría</label><input class="editInput" data-p="datos.badge" value="${esc(d.badge)}" placeholder="Ej. Certificación DC3"/></div>
-        <div><label class="editLabel">Instructor</label>${htmlInstructor(d)}</div>
         <div><label class="editLabel">Duración</label><input class="editInput" data-p="datos.duration" value="${esc(d.duration)}" placeholder="Ej. 2 horas"/></div>
         <div><label class="editLabel">Vigencia de la constancia (meses)</label><input class="editInput" type="number" min="1" max="60" data-num data-p="datos.vigenciaMeses" value="${esc(d.vigenciaMeses ?? 12)}"/></div>
       </div>
@@ -259,7 +266,8 @@ const CURSOS_ADMIN = (() => {
     const v = m.video;
     const video = v ? `<div class="ceVideo"><div class="ceVideo__t">▶ Video del tema</div>
         <video controls preload="metadata" src="${esc(v.src || v.webm)}" ${v.poster ? `poster="${esc(v.poster)}"` : ""}></video>
-        <button class="btnAction" data-ca="videoQuitar" data-i="${i}">Quitar video</button>
+        <div class="ceVideoAcc"><label class="ceArchivo">Reemplazar video<input type="file" accept="video/mp4,video/webm" data-file="videoReemplazo" data-i="${i}"/></label>
+          <button class="btnAction" data-ca="videoQuitar" data-i="${i}">Quitar video</button></div>
         <div class="ceNota">Preguntas durante el video: se muestran al llegar al segundo indicado y el guardia debe contestarlas para continuar.</div>
         ${(v.preguntas || []).map((p, j) => htmlPreguntaVideo(p, i, j)).join("")}
         <button class="btnAction" data-ca="vqNueva" data-i="${i}">+ Pregunta en el video</button></div>`
@@ -269,6 +277,7 @@ const CURSOS_ADMIN = (() => {
         <div class="ceMini"><button title="Subir" data-ca="temaSubir" data-i="${i}" ${i === 0 ? "disabled" : ""}>▲</button><button title="Bajar" data-ca="temaBajar" data-i="${i}" ${i === n - 1 ? "disabled" : ""}>▼</button><button title="Eliminar tema" data-ca="temaBorrar" data-i="${i}">🗑️</button></div></div>
       <label class="editLabel">Título del tema</label><input class="editInput" data-p="datos.modules.${i}.title" value="${esc(m.title)}"/>
       <label class="editLabel">Puntos clave (uno por línea)</label><textarea class="editTextarea" rows="4" data-p="datos.modules.${i}.itemsText">${esc((m.items || []).join("\n"))}</textarea>
+      <label class="editLabel">Notas del instructor <span class="ceNota">(solo las ves tú al presentar; los guardias no)</span></label><textarea class="editTextarea" rows="3" data-p="datos.modules.${i}.notas" placeholder="Ej. Preguntar al grupo si ha vivido una situación así. Dar 2 minutos para comentarios.">${esc(m.notas || "")}</textarea>
       <label class="editLabel">Imágenes <span class="ceNota">(cada imagen es una diapositiva)</span></label>
       ${imgs ? `<div class="ceThumbs">${imgs}</div>` : ""}
       <label class="ceArchivo">+ Agregar imágenes<input type="file" accept="image/*" multiple data-file="imgs" data-i="${i}"/></label>
@@ -311,10 +320,12 @@ const CURSOS_ADMIN = (() => {
       const titulo = String(m.title || "").trim();
       const items = (m.items || []).filter(Boolean);
       const imgs = (m.imgs || []).filter(Boolean);
-      if (!titulo && !items.length && !imgs.length && !m.video) return;          // tema vacío: se descarta
+      const notas = String(m.notas || "").trim();
+      if (!titulo && !items.length && !imgs.length && !m.video && !notas) return;   // tema vacío: se descarta
       if (!titulo) { errores.push(`Tema ${i + 1}: falta el título.`); return; }
       const tema = { title: titulo, items };
       if (imgs.length) tema.imgs = imgs;
+      if (notas) tema.notas = notas;
       if (m.video) {
         const preguntas = [];
         (m.video.preguntas || []).forEach((p, j) => {
@@ -330,11 +341,10 @@ const CURSOS_ADMIN = (() => {
     ED.quiz.forEach((p, j) => { const c = compactarPregunta(p, `Pregunta ${j + 1}`, errores); if (c) quiz.push(c); });
     if (publicar) {
       if (!Number(d.modulo)) errores.push("Elige el módulo del curso para publicarlo.");
-      if (!(d.instructor || "").trim()) errores.push("Elige al instructor del curso para publicarlo.");
       if (!modules.length) errores.push("Para publicar agrega al menos un tema.");
       if (!quiz.length) errores.push("Para publicar agrega al menos una pregunta de examen.");
     }
-    const datos = { modulo: Number(d.modulo) || 0, badge: d.badge.trim() || "Curso", title: d.title.trim(), instructor: (d.instructor || "").trim(), instructorId: d.instructorId || "", duration: d.duration.trim(),
+    const datos = { modulo: Number(d.modulo) || 0, badge: d.badge.trim() || "Curso", title: d.title.trim(), duration: d.duration.trim(),
       vigenciaMeses: Number(d.vigenciaMeses) || 12, img: d.img || "", pdf: d.pdf || "", desc: d.desc.trim(), modules };
     return { errores, datos, quiz };
   }
@@ -346,6 +356,7 @@ const CURSOS_ADMIN = (() => {
       if (!CURSOS.enBD()) await CURSOS.importarIntegrados();     // para no perder los cursos incluidos al crear el primero
       const pub = publicar === null ? ED.publicado : publicar;
       await CURSOS.guardarFila({ key: ED.key, datos: r.datos, quiz: r.quiz, orden: ED.orden, publicado: pub });
+      await limpiarHuerfanos(r.datos);
       await CURSOS.cargar();
       renderCatalog();
       toast(pub ? "✅ Curso guardado y publicado" : "✅ Borrador guardado");
@@ -446,8 +457,8 @@ const CURSOS_ADMIN = (() => {
       case "temaBorrar": if (!confirm("¿Eliminar este tema?")) return; mods.splice(i, 1); if (!mods.length) mods.push({ title: "", items: [] }); break;
       case "temaSubir": [mods[i - 1], mods[i]] = [mods[i], mods[i - 1]]; break;
       case "temaBajar": [mods[i + 1], mods[i]] = [mods[i], mods[i + 1]]; break;
-      case "imgQuitar": mods[i].imgs.splice(k, 1); if (!mods[i].imgs.length) delete mods[i].imgs; break;
-      case "videoQuitar": if (!confirm("¿Quitar el video de este tema?")) return; delete mods[i].video; break;
+      case "imgQuitar": huerfano(mods[i].imgs[k]); mods[i].imgs.splice(k, 1); if (!mods[i].imgs.length) delete mods[i].imgs; break;
+      case "videoQuitar": if (!confirm("¿Quitar el video de este tema?")) return; [mods[i].video.src, mods[i].video.webm, mods[i].video.poster, mods[i].video.vtt].forEach(huerfano); delete mods[i].video; break;
       case "vqNueva": mods[i].video.preguntas = [...(mods[i].video.preguntas || []), { ...preguntaVacia(), t: 0 }]; break;
       case "vqBorrar": mods[i].video.preguntas.splice(j, 1); break;
       case "qNueva": ED.quiz.push(preguntaVacia()); break;
@@ -470,8 +481,8 @@ const CURSOS_ADMIN = (() => {
     const i = Number(el.dataset.i); const d = ED.datos;
     try {
       estado("Subiendo…");
-      if (tipo === "portada") d.img = await subir(await aImagen(f, 900), "portada", f.name);
-      else if (tipo === "pdf") { if (f.size > MAX_VIDEO_MB * 1048576) throw new Error(`El PDF pesa más de ${MAX_VIDEO_MB} MB.`); d.pdf = await subir(f, "pdf", f.name); }
+      if (tipo === "portada") { const antes = d.img; d.img = await subir(await aImagen(f, 900), "portada", f.name); huerfano(antes); }
+      else if (tipo === "pdf") { if (f.size > MAX_VIDEO_MB * 1048576) throw new Error(`El PDF pesa más de ${MAX_VIDEO_MB} MB.`); const antes = d.pdf; d.pdf = await subir(f, "pdf", f.name); huerfano(antes); }
       else if (tipo === "imgs") {
         d.modules[i].imgs = d.modules[i].imgs || [];
         for (const [n, x] of [...el.files].entries()) { estado(`Subiendo imagen ${n + 1} de ${el.files.length}…`); d.modules[i].imgs.push(await subir(await aImagen(x), "imgs", x.name)); }
@@ -479,6 +490,12 @@ const CURSOS_ADMIN = (() => {
         if (f.size > MAX_VIDEO_MB * 1048576) throw new Error(`El video pesa ${(f.size / 1048576).toFixed(0)} MB y el máximo es ${MAX_VIDEO_MB} MB. Comprímelo o baja la resolución a 720p.`);
         const url = await subir(f, "video", f.name);
         d.modules[i].video = { [/\.webm$/i.test(f.name) ? "webm" : "src"]: url, preguntas: [] };
+      } else if (tipo === "videoReemplazo") {
+        if (f.size > MAX_VIDEO_MB * 1048576) throw new Error(`El video pesa ${(f.size / 1048576).toFixed(0)} MB y el máximo es ${MAX_VIDEO_MB} MB. Comprímelo o baja la resolución a 720p.`);
+        const v = d.modules[i].video; const url = await subir(f, "video", f.name);
+        [v.src, v.webm, v.poster, v.vtt].forEach(huerfano);                  // lo anterior se borra al guardar
+        delete v.src; delete v.webm; delete v.poster; delete v.vtt;          // el póster y los subtítulos viejos ya no corresponden
+        v[/\.webm$/i.test(f.name) ? "webm" : "src"] = url;                    // las preguntas del video se conservan
       } else if (tipo === "pdfSlides") await importarPdf(f);
       estado(""); pintar();
     } catch (e) { estado(e.message, true); }
@@ -489,11 +506,6 @@ const CURSOS_ADMIN = (() => {
     if (!ed || ed.dataset.listo) return; ed.dataset.listo = "1";
     const entrada = (ev) => {
       const t = ev.target;
-      if (t.dataset.instr !== undefined && ED) {
-        if (t.value === "__txt") return;
-        const i = INSTRUCTORES.find((x) => x.id === t.value);
-        ED.datos.instructor = i ? i.nombre : ""; ED.datos.instructorId = i ? i.id : ""; return;
-      }
       if (!t.dataset.p || !ED) return;
       if (t.type === "radio" && ev.type !== "change") return;
       set(t.dataset.p, t.dataset.num !== undefined ? Number(t.value) : t.value);
@@ -507,6 +519,7 @@ const CURSOS_ADMIN = (() => {
       try {
         switch (b.dataset.ca) {
           case "ver": loadDetail(k); navigate("detail"); break;
+          case "presentar": PRES.iniciar(k); break;
           case "editar": abrir(k); break;
           case "nuevo": abrir(null); break;
           case "importar": b.disabled = true; await CURSOS.importarIntegrados(); renderCatalog(); render(); toast("✅ Cursos importados. Ya puedes editarlos."); break;
